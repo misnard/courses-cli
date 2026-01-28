@@ -1,0 +1,33 @@
+# Build artifacts
+/target/
+**/*.rs.bk
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sensitive files - NEVER commit these
+*.har
+*.pem
+*.key
+.env
+.env.*
+secrets.*
+credentials.*
+
+# Config files that may contain tokens
+config.json
+
+# Claude Code local files
+.claude/
+
+# Test outputs
+*.log
+*.tmp
