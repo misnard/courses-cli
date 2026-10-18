@@ -341,6 +341,11 @@ impl Browser {
     pub fn cookies(&mut self, domain: &str) -> Res<Vec<Value>> {
         self.cdp.cookies(domain)
     }
+
+    /// Set cookies (CDP `CookieParam` objects), e.g. ones a site's own JS would set.
+    pub fn set_cookies(&mut self, cookies: Value) -> Res<()> {
+        self.cdp.call("Storage.setCookies", json!({ "cookies": cookies }), None).map(|_| ())
+    }
 }
 
 impl Drop for Browser {
