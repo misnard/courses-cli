@@ -76,9 +76,10 @@ impl Shop for Casino {
         let p = page(&store(Provider::Casino)?);
         let qte = quantity.to_string();
         let form = [("idProduit", id), ("qte", qte.as_str()), ("reloadCommande", "false"), ("famille", ""), ("sousfamille", "")];
+        // An unknown id gets an HTTP 500, which `post` turns into an error.
         let r = self.post(&p, "/commande/ajouter-panier", &form)?;
         if r["success"] != true {
-            bail!("Casino refused to change product {id} (unknown ID?).");
+            bail!("Casino refused to change product {id}.");
         }
         let held = lines(r["html"].as_str().unwrap_or("")).into_iter().find(|l| l.product.id == id);
         Ok(held.map_or(0, |l| l.quantity))
