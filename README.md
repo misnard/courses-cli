@@ -19,7 +19,7 @@ pay on the site.
 | E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
 | Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
-| Auchan | `auchan` | | | | | in progress |
+| Auchan Drive | `auchan` | ✓ | ✓ | ✓ | ✓ (unverified) | drives and pick-up points |
 | Super U | `superu` | ✓ | ✓ | — | ✓ (unverified) | prices per picked store, Nutri-Score, EAN |
 | Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | Petit Casino, Casino Shop, Spar, Vival |
 
@@ -141,6 +141,19 @@ The cart is anonymous and tied to the picked drive: picking another drive
 starts a new one. The CLI does not use a Chronodrive account (`auth login` only
 clears a bot check). Endpoints partly from
 [chronodrive-mcp](https://github.com/ncleton/chronodrive-mcp) (MIT).
+
+### Auchan Drive
+
+```bash
+courses --provider auchan store 69001            # drives and pick-up points, nearest first
+courses --provider auchan store 69001 --pick 929
+courses --provider auchan search lait -l 5
+courses --provider auchan cart add <product>:<offer> -q 2
+```
+
+Product IDs pair Auchan's product and the drive's offer, as `search` and
+`cart show` print them. No account needed. Endpoints from
+[mcp-auchan-drive](https://github.com/MrRaph/mcp-auchan-drive) (MIT).
 
 ### Super U
 
