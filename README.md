@@ -29,8 +29,8 @@ for the shell (`export COURSES_PROVIDER=leclerc`).
 ## Installation
 
 ```bash
-git clone https://github.com/misnard/rs-carrefour-cli.git
-cd rs-carrefour-cli
+git clone https://github.com/misnard/courses-cli.git
+cd courses-cli
 cargo build --release
 cp target/release/courses ~/.local/bin/
 ```

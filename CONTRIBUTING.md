@@ -10,7 +10,7 @@ Be respectful and constructive. We're all here to build something useful togethe
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/misnard/rs-carrefour-cli/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/misnard/courses-cli/issues)
 2. If not, create a new issue with:
    - A clear, descriptive title
    - Steps to reproduce the bug
@@ -41,8 +41,8 @@ Be respectful and constructive. We're all here to build something useful togethe
 
 ```bash
 # Clone your fork
-git clone https://github.com/misnard/rs-carrefour-cli.git
-cd rs-carrefour-cli
+git clone https://github.com/misnard/courses-cli.git
+cd courses-cli
 
 # Build
 cargo build
