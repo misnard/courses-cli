@@ -7,6 +7,8 @@
 //! a server-side "journey" (`POST /journey/update`) that the site's JS names
 //! in the `lark-journey` cookie; we set that cookie the same way. The cart is
 //! JSON, named by the `lark-cart` cookie; every write is one `POST /cart/update`.
+//! The next pickup slot is the header's slot widget (`/fragment/slot`), and
+//! checkout is the site's own cart page, `/checkout/cart/`.
 //!
 //! Product ids are `<productId>:<offerId>`: a cart line needs the drive's
 //! offer, and a line added with the productId alone gets no price.
@@ -20,6 +22,11 @@ const HOME: &str = "https://www.auchan.fr/";
 const XHR: (&str, &str) = ("x-requested-with", "XMLHttpRequest");
 /// Search that matches nothing: still a full page, with the header.
 const NO_MATCH: &str = "zzzznomatchzzz";
+
+/// Headers of the site's HTML fragment loader.
+fn crest(renderer: &str) -> [(&str, &str); 3] {
+    [("accept", "application/crest"), ("x-crest-renderer", renderer), XHR]
+}
 
 pub struct Auchan {
     web: Web,
@@ -103,7 +110,13 @@ impl Shop for Auchan {
 
     fn cart(&mut self) -> Result<Cart> {
         self.drive()?;
-        Ok(cart_of(&self.cart_json()?))
+        let mut cart = cart_of(&self.cart_json()?);
+        if !cart.lines.is_empty() {
+            // A failure costs the note, not the cart.
+            let url = format!("{BASE}/fragment/slot?displayMode=JOURNEY_BUTTON&loading=false");
+            cart.note = self.web.send(HOME, "GET", &url, &crest("slot-renderer"), None).ok().and_then(|h| next_slot(&h));
+        }
+        Ok(cart)
     }
 
     /// One write for add, update and remove: the line's `id` when it is
@@ -133,7 +146,6 @@ impl Shop for Auchan {
 
     fn find_stores(&mut self, query: &str) -> Result<Vec<Store>> {
         let url = url::Url::parse_with_params(&format!("{BASE}/geocoding/autocomplete"), [("query", query)])?;
-        let crest = |renderer: &'static str| [("accept", "application/crest"), ("x-crest-renderer", renderer), XHR];
         let html = self.web.send(HOME, "GET", url.as_str(), &crest("geocoding-renderer"), None)?;
         let Some(place) = html.split("<li ").nth(1) else { return Ok(vec![]) };
         let a = |k: &str| attr(place, k).unwrap_or_default();
@@ -157,6 +169,13 @@ impl Shop for Auchan {
 
     fn login(&mut self) -> Result<()> {
         self.web.login(HOME)
+    }
+
+    /// The cart lives in the profile's `lark-cart` cookie; the journey cookie
+    /// makes the page offer the picked drive's slots.
+    fn checkout(&mut self) -> Result<()> {
+        self.drive()?;
+        self.web.show(&format!("{BASE}/checkout/cart/"), "Book a slot and pay")
     }
 
     /// Every page's header script says it: `window.G.initialAuthInfo = {"authenticated":false,...}`.
@@ -258,6 +277,14 @@ fn line(it: &Value) -> CartLine {
     }
 }
 
+/// "Next pickup: Lundi 19 octobre 08:00" from the slot widget's "dès Lundi 19 octobre 08:00".
+fn next_slot(html: &str) -> Option<String> {
+    let html = decode_html(html);
+    let slot = after(&html, "dès ")?;
+    let slot = slot[..slot.find('<').unwrap_or(slot.len())].split_whitespace().collect::<Vec<_>>().join(" ");
+    slot.contains(char::is_numeric).then(|| format!("Next pickup: {slot}"))
+}
+
 fn after<'a>(s: &'a str, marker: &str) -> Option<&'a str> {
     s.find(marker).map(|i| &s[i + marker.len()..])
 }
@@ -338,5 +365,9 @@ mod tests {
         let l = &c.lines[0];
         assert_eq!((l.product.id.as_str(), l.product.name.as_str(), l.quantity), ("fe94:0026", "LACTEL Vita'Vie Lait 12 vitamines", 2));
         assert_eq!((l.total, c.total, l.product.ean.as_deref()), (Some(14.22), Some(14.22), Some("3428271240029")));
+
+        let slot = r#"<div class="place-pos__availability"><script data-pipe>Pipe.start(325)</script> d&#xE8;s Lundi 19 octobre 08:00 <script data-pipe>Pipe.end(325)</script></div>"#;
+        assert_eq!(next_slot(slot).as_deref(), Some("Next pickup: Lundi 19 octobre 08:00"));
+        assert_eq!(next_slot("<button>Choisir un créneau</button>"), None);
     }
 }
