@@ -20,9 +20,9 @@ fn nutriscore(n: &str) -> colored::ColoredString {
     }
 }
 
-pub fn search(p: Provider, query: &str, limit: u32, format: &str, brand: Option<&str>, available_only: bool) -> Result<()> {
+pub fn search(p: Provider, query: &str, limit: u32, format: &str, brand: Option<&str>, available_only: bool, fill_nutriscore: bool) -> Result<()> {
     let brand = brand.map(str::to_lowercase);
-    let products: Vec<Product> = providers::open(p, true)?
+    let mut products: Vec<Product> = providers::open(p, true)?
         .search(query, limit)?
         .into_iter()
         .filter(|x| !available_only || x.available)
@@ -32,6 +32,12 @@ pub fn search(p: Provider, query: &str, limit: u32, format: &str, brand: Option<
         })
         .take(limit as usize)
         .collect();
+    // Optional extra: a failure costs the scores, not the results.
+    if fill_nutriscore {
+        if let Err(e) = crate::openfoodfacts::fill_nutriscores(&mut products) {
+            eprintln!("Warning: no Nutri-Score from Open Food Facts: {e}");
+        }
+    }
 
     if format == "json" {
         println!("{}", serde_json::to_string_pretty(&json!({"products": products, "total": products.len()}))?);
