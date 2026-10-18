@@ -1,0 +1,68 @@
+{
+  "name": "add_item_to_cart_by_ean",
+  "description": "Adds a product to the authenticated user's cart on Carrefour France using the product EAN, a basket service ID, and a sub-basket type (e.g. drive click-and-collect). Also accepts a tracking context to indicate the page type and page ID from which the action was triggered. Returns updated cart totals and summary.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "ean": {
+        "type": "string",
+        "description": "The EAN (barcode) of the product to add to the cart."
+      },
+      "basketServiceId": {
+        "type": "string",
+        "description": "The basket service ID identifying the store/drive service to use (e.g. '0678-150-7052')."
+      },
+      "subBasketType": {
+        "type": "string",
+        "description": "The sub-basket type, such as 'drive_clcv' for drive click-and-collect."
+      },
+      "pageType": {
+        "type": "string",
+        "description": "The page type for tracking purposes (e.g. 'moncompte', 'search', 'pdp')."
+      },
+      "pageId": {
+        "type": "string",
+        "description": "The page ID for tracking purposes (e.g. 'moncompte', a product or category ID)."
+      }
+    },
+    "required": [
+      "ean",
+      "basketServiceId",
+      "subBasketType"
+    ]
+  },
+  "request": {
+    "method": "PATCH",
+    "url": "https://www.carrefour.fr/api/cart/items",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": {
+      "ean": {
+        "$param": "ean"
+      },
+      "basketServiceId": {
+        "$param": "basketServiceId"
+      },
+      "subBasketType": {
+        "$param": "subBasketType"
+      },
+      "trackingRequest": {
+        "pageType": {
+          "$param": "pageType"
+        },
+        "pageId": {
+          "$param": "pageId"
+        }
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1815",
+    "t_002_3372"
+  ]
+}

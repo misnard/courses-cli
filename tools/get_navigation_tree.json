@@ -1,0 +1,24 @@
+{
+  "name": "get_navigation_tree",
+  "description": "Retrieves the full navigation/category tree for the Carrefour France website. Returns a hierarchical tree of categories (rayons) and redirections, including category names, codes, IDs, types, business types, slugs, picto URLs, and child categories. Also indicates whether promotions are currently active. Useful for building navigation menus or browsing the category hierarchy.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/navigation",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_003_0959"
+  ]
+}

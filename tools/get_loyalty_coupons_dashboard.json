@@ -1,0 +1,25 @@
+{
+  "name": "get_loyalty_coupons_dashboard",
+  "description": "Retrieves the loyalty coupons dashboard summary for the authenticated user on Carrefour France. Returns the number of available coupons, total available coupon amount (in euros), and number of coupons already added to the cart. Useful for displaying a quick overview of the user's loyalty coupon status.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/loyalty/coupons-dashboard",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0242",
+    "t_003_0593"
+  ]
+}

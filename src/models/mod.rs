@@ -260,47 +260,6 @@ pub struct UserSlot {
     pub date: Option<SlotDate>,
 }
 
-// ============ FlareSolverr Models ============
-
-#[allow(dead_code)]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FlareSolverrRequest {
-    pub cmd: String,
-    pub url: String,
-    #[serde(rename = "maxTimeout")]
-    pub max_timeout: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FlareSolverrResponse {
-    pub status: String,
-    pub message: String,
-    pub solution: Option<FlareSolverrSolution>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlareSolverrSolution {
-    pub url: String,
-    pub status: u16,
-    pub cookies: Vec<FlareSolverrCookie>,
-    pub user_agent: String,
-    pub response: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlareSolverrCookie {
-    pub name: String,
-    pub value: String,
-    pub domain: String,
-    pub path: String,
-    pub expires: Option<f64>,
-    pub http_only: bool,
-    pub secure: bool,
-    pub same_site: Option<String>,
-}
-
 // ============ Timeslot Models ============
 
 #[allow(dead_code)]

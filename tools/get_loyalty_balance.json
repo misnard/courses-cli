@@ -1,0 +1,26 @@
+{
+  "name": "get_loyalty_balance",
+  "description": "Retrieves the loyalty points balance for the authenticated user on Carrefour France. Returns the account bonus, last updated timestamp, available total points, and the date until which the points are valid. Useful for displaying the user's current loyalty points balance.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/secured/loyalty/balance",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0127",
+    "t_003_0231",
+    "t_003_0567"
+  ]
+}

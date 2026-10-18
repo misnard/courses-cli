@@ -1,0 +1,43 @@
+{
+  "name": "get_store_information_inserts",
+  "description": "Retrieves store-specific information inserts (e.g. banners, notices, messages) for a given store and a set of placement identifiers on Carrefour France. Useful for displaying contextual informational content at specific locations during checkout (e.g. top of checkout, checkout summary, checkout slot selection, checkout payment). Returns a list of information insert items for the requested placements.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "store_id": {
+        "type": "string",
+        "description": "The ID of the store to retrieve information inserts for (e.g. '7052')."
+      },
+      "insert_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "A list of placement/insert identifiers to retrieve content for (e.g. ['checkout_top', 'checkout_summary', 'checkout_slot', 'checkout_payment'])."
+      }
+    },
+    "required": [
+      "store_id",
+      "insert_ids"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/information-insert/stores/{store_id}",
+    "headers": {},
+    "query": {},
+    "body": {
+      "insertIds": {
+        "$param": "insert_ids"
+      }
+    },
+    "content_type": "multipart/form-data"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_4579",
+    "t_002_5152",
+    "t_002_6021",
+    "t_002_6042"
+  ]
+}

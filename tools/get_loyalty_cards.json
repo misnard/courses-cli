@@ -1,0 +1,25 @@
+{
+  "name": "get_loyalty_cards",
+  "description": "Retrieves the loyalty cards associated with the authenticated user's account on Carrefour France. Returns a list of loyalty cards with their card numbers and types (e.g. LOYALTY). Useful for displaying the user's registered loyalty/fidelity cards.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/secured/loyalty/my-cards",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0357",
+    "t_003_0576"
+  ]
+}

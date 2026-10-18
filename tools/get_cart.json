@@ -1,0 +1,76 @@
+{
+  "name": "get_cart",
+  "description": "Retrieves the current shopping cart contents and summary for the authenticated user on Carrefour France. Returns cart totals (amounts, discounts, loyalty points, delivery fees), marketplace sub-baskets, additional orders, preorders, and relevant API endpoints. Optionally forces a refresh of cart data.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "refresh": {
+        "type": "boolean",
+        "description": "If true, forces a server-side refresh of the cart data before returning it."
+      }
+    },
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/cart",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "refresh": {
+        "$param": "refresh"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_001_0556",
+    "t_002_0054",
+    "t_002_0468",
+    "t_002_0562",
+    "t_002_0702",
+    "t_002_0841",
+    "t_002_0877",
+    "t_002_0898",
+    "t_002_1043",
+    "t_002_1132",
+    "t_002_1204",
+    "t_002_1239",
+    "t_002_1294",
+    "t_002_1490",
+    "t_002_2193",
+    "t_002_2363",
+    "t_002_2721",
+    "t_002_3792",
+    "t_002_3855",
+    "t_002_4070",
+    "t_002_4156",
+    "t_002_4401",
+    "t_002_4467",
+    "t_002_4570",
+    "t_002_4591",
+    "t_002_4762",
+    "t_002_4963",
+    "t_002_5144",
+    "t_002_5158",
+    "t_002_5449",
+    "t_002_6020",
+    "t_002_6022",
+    "t_002_6043",
+    "t_002_6245",
+    "t_003_0078",
+    "t_003_0226",
+    "t_003_0340",
+    "t_003_0442",
+    "t_003_0556",
+    "t_003_0655",
+    "t_003_0737",
+    "t_003_0856",
+    "t_003_0935",
+    "t_003_1076"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "name": "get_loyalty_order_receipt_details",
+  "description": "Retrieves the detailed receipt for a specific in-store purchase associated with the authenticated user's loyalty card on Carrefour France. Returns receipt details such as store name, transaction date, total paid amount, discounts, receipt number, barcode, and links to invoice/card receipt. The receipt is identified by the store GLN, date key, and receipt number.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "gln": {
+        "type": "string",
+        "description": "The GLN (Global Location Number) of the store where the purchase was made (e.g. '3020180204545')"
+      },
+      "date_key": {
+        "type": "string",
+        "description": "The date key of the transaction in YYYYMMDD format (e.g. '20260601')"
+      },
+      "receipt_number": {
+        "type": "string",
+        "description": "The receipt number identifying the specific transaction (e.g. '1-211-1907')"
+      }
+    },
+    "required": [
+      "gln",
+      "date_key",
+      "receipt_number"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/secured/loyalty/orders/receipt/{gln}/{date_key}/{receipt_number}",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0478"
+  ]
+}

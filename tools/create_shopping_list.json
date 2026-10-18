@@ -1,0 +1,36 @@
+{
+  "name": "create_shopping_list",
+  "description": "Creates a new shopping list (memo-list type) for the authenticated user on Carrefour France. Accepts a title for the new list and returns the created list details including its ID, type, slug, item count, last updated date, and EANs.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "The title/name of the new shopping list to create."
+      }
+    },
+    "required": [
+      "title"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/shopping-lists/memo-list",
+    "headers": {
+      "content-type": "application/x-www-form-urlencoded",
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "title": {
+        "$param": "title"
+      }
+    },
+    "body": null,
+    "content_type": "application/x-www-form-urlencoded"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0779"
+  ]
+}

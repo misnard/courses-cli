@@ -1,0 +1,41 @@
+{
+  "name": "get_shopping_lists",
+  "description": "Retrieves all shopping lists for the authenticated user on Carrefour France. Returns a list of shopping lists with details such as list ID, title, type (e.g. standard, in-store), item count, slug, last updated date, and EANs of items in the list.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/shopping-lists",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0515",
+    "t_002_0747",
+    "t_002_1054",
+    "t_002_1331",
+    "t_002_1518",
+    "t_002_2209",
+    "t_002_2396",
+    "t_002_2749",
+    "t_002_3891",
+    "t_002_4166",
+    "t_002_4402",
+    "t_002_4786",
+    "t_002_4980",
+    "t_002_5471",
+    "t_003_0090",
+    "t_003_0237",
+    "t_003_0749",
+    "t_003_1088"
+  ]
+}

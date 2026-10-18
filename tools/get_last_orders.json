@@ -1,0 +1,26 @@
+{
+  "name": "get_last_orders",
+  "description": "Retrieves the most recent orders for the authenticated user on Carrefour France. Returns a list of the user's last orders with their details.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/orders/last",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0753",
+    "t_002_1053",
+    "t_002_1333"
+  ]
+}

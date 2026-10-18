@@ -1,0 +1,44 @@
+{
+  "name": "get_products_by_query",
+  "description": "Retrieves a list of products from Carrefour France based on a predefined query identifier. Returns product details including EAN, title, brand, category, images, and links. Useful for fetching curated product lists (e.g. bestsellers, promotions, themed selections) identified by a query ID.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query_id": {
+        "type": "string",
+        "description": "The predefined query identifier (e.g. 'query_11836') that determines which product list to retrieve."
+      },
+      "limit": {
+        "type": "number",
+        "description": "Maximum number of products to return per page (e.g. 20)."
+      }
+    },
+    "required": [
+      "query_id"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/products/query/{query_id}",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "limit": {
+        "$param": "limit"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0088",
+    "t_002_0506",
+    "t_002_0725",
+    "t_002_1057",
+    "t_002_1340",
+    "t_003_0095"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "get_donation_products",
+  "description": "Retrieves the list of donation products (charitable associations) available on Carrefour France. Returns a list of donation items with their EAN, title, brand, slug, category, images, and other product attributes. Useful for displaying available charities/associations that users can donate to during checkout.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/donation",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_4578",
+    "t_002_5147"
+  ]
+}

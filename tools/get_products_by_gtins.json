@@ -1,0 +1,44 @@
+{
+  "name": "get_products_by_gtins",
+  "description": "Retrieves product details for a list of GTINs (barcodes/EANs) from Carrefour France, optionally scoped to a specific facility/store service. Returns product details including EAN, title, brand, category, images, business type, and links for each matching product. Useful for bulk product lookups by barcode.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "gtins": {
+        "type": "array",
+        "description": "List of GTINs (EAN/barcode strings) identifying the products to retrieve."
+      },
+      "facilityServiceId": {
+        "type": "string",
+        "description": "The facility/store service ID to scope product availability and offers (e.g. '0678-150-7052')."
+      }
+    },
+    "required": [
+      "gtins"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/products",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "query": {},
+    "body": {
+      "gtins": {
+        "$param": "gtins"
+      },
+      "facilityServiceId": {
+        "$param": "facilityServiceId"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_1620",
+    "t_002_1839",
+    "t_002_3407"
+  ]
+}

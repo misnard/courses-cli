@@ -1,0 +1,57 @@
+{
+  "name": "get_loyalty_order_receipts",
+  "description": "Retrieves the in-store purchase receipts associated with the authenticated user's loyalty card on Carrefour France. Returns a paginated list of receipts with details such as transaction date, store name, receipt number, total paid amount, and receipt label. Supports scrolling through results using a scroll paging token and scroll hash. Useful for displaying the user's in-store purchase history linked to their loyalty card.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "loyaltyCardNumber": {
+        "type": "string",
+        "description": "The loyalty card number to retrieve receipts for."
+      },
+      "loyaltyCardType": {
+        "type": "string",
+        "description": "The type of loyalty card (e.g. 'LOYALTY')."
+      },
+      "scrollPaging": {
+        "type": "string",
+        "description": "Scroll paging token returned from a previous response, used to paginate through results."
+      },
+      "scrollHash": {
+        "type": "string",
+        "description": "Scroll hash returned from a previous response, used together with scrollPaging to paginate through results."
+      }
+    },
+    "required": [
+      "loyaltyCardNumber",
+      "loyaltyCardType"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/secured/loyalty/orders/receipts",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "loyaltyCardNumber": {
+        "$param": "loyaltyCardNumber"
+      },
+      "loyaltyCardType": {
+        "$param": "loyaltyCardType"
+      },
+      "scrollPaging": {
+        "$param": "scrollPaging"
+      },
+      "scrollHash": {
+        "$param": "scrollHash"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0375"
+  ]
+}

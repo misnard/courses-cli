@@ -1,0 +1,35 @@
+{
+  "name": "get_account_kpis",
+  "description": "Retrieves loyalty and financial KPI metrics for the authenticated user's account on Carrefour France. Each KPI is identified by a numeric code and returns a value (e.g. cumulative loyalty rewards earned in-store or online since the start of the current year). Useful for displaying account performance indicators on the loyalty/fidelity dashboard. Known codes include: 14 (cumulative in-store loyalty card rewards since the start of the year), 15 (cumulative drive/e-commerce and in-store loyalty discounts since the start of the year, excluding delivery fee discounts), 16 (cumulative e-commerce individual rewards since the start of the year, excluding delivery fee rewards).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "codes": {
+        "type": "array",
+        "description": "List of KPI codes to retrieve. Each code is a numeric string identifying a specific KPI metric (e.g. '14' for in-store loyalty rewards, '15' for total loyalty discounts, '16' for e-commerce individual rewards)."
+      }
+    },
+    "required": [
+      "codes"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/my-account/kpis",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "codes[]": {
+        "$param": "codes"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0588"
+  ]
+}

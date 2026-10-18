@@ -3,10 +3,10 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 #[allow(dead_code)]
 pub enum CarrefourError {
-    #[error("Not authenticated. Run 'carrefour auth set --session <SESSID>' first.")]
+    #[error("Not authenticated. Run 'carrefour auth login' first.")]
     NotAuthenticated,
 
-    #[error("Session expired or invalid. Please re-authenticate with a fresh session cookie.")]
+    #[error("Session expired or invalid. Run 'carrefour auth login' to sign in again.")]
     Unauthorized,
 
     #[error("Product not found: {0}")]
@@ -34,7 +34,7 @@ pub enum CarrefourError {
 impl CarrefourError {
     pub fn from_status(status: u16, body: &str) -> Self {
         match status {
-            401 => CarrefourError::Unauthorized,
+            401 | 403 => CarrefourError::Unauthorized,
             404 => CarrefourError::NotFound(body.to_string()),
             429 => CarrefourError::RateLimited,
             _ => CarrefourError::ApiError {

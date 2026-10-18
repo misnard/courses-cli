@@ -1,0 +1,43 @@
+{
+  "name": "search_products",
+  "description": "Searches for products on Carrefour France using a text query. Returns a paginated list of products matching the query, along with pagination metadata, facets for filtering (promotions, Carrefour brands, categories, etc.), total result count, and navigation links. Supports pagination via the page parameter.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "q": {
+        "type": "string",
+        "description": "The search query/keyword to search for products (e.g. 'isolant', 'tomate', 'yaourt')"
+      },
+      "page": {
+        "type": "number",
+        "description": "Page number for paginated results (starting from 1)"
+      }
+    },
+    "required": [
+      "q"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/s",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "q": {
+        "$param": "q"
+      },
+      "page": {
+        "$param": "page"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_4231",
+    "t_002_4282"
+  ]
+}

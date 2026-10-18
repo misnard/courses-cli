@@ -1,0 +1,96 @@
+{
+  "name": "get_product_recommendations",
+  "description": "Retrieves product recommendations for a given page context on Carrefour France. On product detail pages (context=pdp), returns recommendation zones such as 'Customers also bought' and 'You might also like', based on the product EAN, price, categories, and facility service. On product listing pages (context=plp), returns recommendations based on categories. Returns a list of recommendation zones, each with a label and a list of recommended products.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "context": {
+        "type": "string",
+        "description": "The page context for recommendations. Use 'pdp' for product detail pages, 'plp' for product listing pages."
+      },
+      "product_cdbase": {
+        "type": "string",
+        "description": "The product EAN/barcode (cdbase identifier) for which recommendations are fetched. Required for pdp context."
+      },
+      "price": {
+        "type": "number",
+        "description": "The price of the product (in centimes or the product's price unit). Used for pdp context."
+      },
+      "categories": {
+        "type": "array",
+        "description": "List of category IDs associated with the product or page. Can include multiple IDs for the product's category hierarchy."
+      },
+      "category": {
+        "type": "string",
+        "description": "The primary/leaf category ID for the product or page. Can be empty for plp context."
+      },
+      "isNonFood": {
+        "type": "boolean",
+        "description": "Indicates whether the product is a non-food item. Used for pdp context."
+      },
+      "facilityServiceId": {
+        "type": "string",
+        "description": "The facility/store service ID to scope recommendations to a specific store or drive service."
+      },
+      "scenario": {
+        "type": "string",
+        "description": "Optional A/B test scenario identifier (e.g. 'A') to use for recommendation logic."
+      },
+      "dropExtraOffers": {
+        "type": "boolean",
+        "description": "Optional flag to drop extra offers from the recommendation results."
+      }
+    },
+    "required": [
+      "context"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/recommendations",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "context": {
+        "$param": "context"
+      },
+      "product_cdbase": {
+        "$param": "product_cdbase"
+      },
+      "price": {
+        "$param": "price"
+      },
+      "categories[]": {
+        "$param": "categories"
+      },
+      "category": {
+        "$param": "category"
+      },
+      "isNonFood": {
+        "$param": "isNonFood"
+      },
+      "facilityServiceId": {
+        "$param": "facilityServiceId"
+      },
+      "scenario": {
+        "$param": "scenario"
+      },
+      "dropExtraOffers": {
+        "$param": "dropExtraOffers"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_2787",
+    "t_002_2878",
+    "t_002_2963",
+    "t_002_5009",
+    "t_002_5042",
+    "t_003_0946"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "get_shopping_list",
+  "description": "Retrieves the details of a specific shopping list for the authenticated user on Carrefour France, identified by its unique list ID. Returns the list reference, title, type (e.g. MTB for in-store memo list), item count, categories, and memos/items.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "list_id": {
+        "type": "string",
+        "description": "The unique identifier (UUID) of the shopping list to retrieve."
+      }
+    },
+    "required": [
+      "list_id"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/shopping-lists-id/{list_id}",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0872"
+  ]
+}

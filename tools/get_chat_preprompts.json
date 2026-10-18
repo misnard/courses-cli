@@ -1,0 +1,71 @@
+{
+  "name": "get_chat_preprompts",
+  "description": "Retrieves contextual and/or generic pre-suggested questions/prompts for the Carrefour AI chat assistant (OCB), based on the user's current navigation context (page type and title). For product detail pages, a product GTIN can also be provided. Returns contextual questions relevant to the current page (e.g. recipe suggestions for a search on 'tomato') and generic questions (e.g. recipe ideas, shopping list generation, product recommendations). Useful for populating chat suggestion chips on search results or product pages.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "modes": {
+        "type": "array",
+        "description": "List of prompt modes to retrieve. Possible values: 'contextual' (questions related to the current page context) and/or 'generic' (general shopping assistant questions)."
+      },
+      "count": {
+        "type": "number",
+        "description": "Maximum number of preprompts to return."
+      },
+      "navigationCurrentPageTitle": {
+        "type": "string",
+        "description": "The title of the current page the user is on (e.g. 'Résultat(s) pour \"tomate\" - Carrefour.fr' for a search results page, or the product name for a product detail page)."
+      },
+      "navigationCurrentPageType": {
+        "type": "string",
+        "description": "The type of the current page. Examples: 'search-results-product-listing-page', 'product-detail-page'."
+      },
+      "navigationProductPageGtin": {
+        "type": "string",
+        "description": "The GTIN (barcode) of the product when on a product detail page. Only applicable when navigationCurrentPageType is 'product-detail-page'."
+      }
+    },
+    "required": [
+      "modes",
+      "count",
+      "navigationCurrentPageTitle",
+      "navigationCurrentPageType"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://ocb.carrefour.fr/preprompts",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "query": {},
+    "body": {
+      "modes": {
+        "$param": "modes"
+      },
+      "count": {
+        "$param": "count"
+      },
+      "navigationCurrentPageTitle": {
+        "$param": "navigationCurrentPageTitle"
+      },
+      "navigationCurrentPageType": {
+        "$param": "navigationCurrentPageType"
+      },
+      "navigationProductPageGtin": {
+        "$param": "navigationProductPageGtin"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_2463",
+    "t_002_2877",
+    "t_002_3979",
+    "t_002_4220",
+    "t_002_4462",
+    "t_002_4873",
+    "t_002_5080"
+  ]
+}

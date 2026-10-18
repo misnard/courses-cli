@@ -1,0 +1,62 @@
+{
+  "name": "get_orders",
+  "description": "Retrieves the authenticated user's order history on Carrefour France. Returns a paginated list of orders with details such as order number, service type, date, total amount, order status, store information, delivery slot, payment info, and available action links (cancel, refund, change slot, etc.). Supports filtering by date range (startDate/endDate), limiting the number of results (scrollSize), and paginating through results using a scroll hash and paging token.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "scrollSize": {
+        "type": "number",
+        "description": "Maximum number of orders to return per page."
+      },
+      "startDate": {
+        "type": "string",
+        "description": "Filter orders from this date (ISO 8601 format, e.g. '2026-03-07T23:00:00.000Z')."
+      },
+      "endDate": {
+        "type": "string",
+        "description": "Filter orders up to this date (ISO 8601 format, e.g. '2026-06-08T21:59:59.999Z')."
+      },
+      "scrollHash": {
+        "type": "string",
+        "description": "Scroll hash returned from a previous response for paginating to the next page of results."
+      },
+      "scrollPaging": {
+        "type": "string",
+        "description": "Scroll paging token returned from a previous response for paginating to the next page of results."
+      }
+    },
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/orders",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "scrollSize": {
+        "$param": "scrollSize"
+      },
+      "startDate": {
+        "$param": "startDate"
+      },
+      "endDate": {
+        "$param": "endDate"
+      },
+      "scrollHash": {
+        "$param": "scrollHash"
+      },
+      "scrollPaging": {
+        "$param": "scrollPaging"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0246",
+    "t_003_0359"
+  ]
+}

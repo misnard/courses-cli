@@ -1,0 +1,37 @@
+{
+  "name": "get_checkout_recommendations",
+  "description": "Retrieves product recommendations during checkout on Carrefour France for a specific facility/store and basket service type. Returns recommendation zones such as frequent purchases, personalized recommendations, and current promotions, each with a list of products and delivery type. Useful for displaying cross-sell or upsell suggestions to the user at checkout.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "facility_id": {
+        "type": "string",
+        "description": "The facility/store identifier (e.g. '0678-150-7052')"
+      },
+      "basket_service": {
+        "type": "string",
+        "description": "The basket service type (e.g. 'drive_clcv' for drive click-and-collect, 'drive', 'delivery', etc.)"
+      }
+    },
+    "required": [
+      "facility_id",
+      "basket_service"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/checkout/recommendations/{facility_id}/{basket_service}",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_4619",
+    "t_002_5175"
+  ]
+}

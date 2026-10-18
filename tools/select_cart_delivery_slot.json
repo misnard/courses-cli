@@ -1,0 +1,43 @@
+{
+  "name": "select_cart_delivery_slot",
+  "description": "Selects a delivery or drive time slot for the authenticated user's cart on Carrefour France. Associates the cart with a specific time slot at a given store. Returns the confirmed slot details including title, date/time range, cutoff time, slot reference, and expiration time in minutes.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "slotRef": {
+        "type": "string",
+        "description": "The unique reference identifier of the delivery/drive time slot to select (UUID format), as returned by the get_delivery_timeslots tool."
+      },
+      "storeRef": {
+        "type": "number",
+        "description": "The numeric reference identifier of the store/facility for which the slot is being selected."
+      }
+    },
+    "required": [
+      "slotRef",
+      "storeRef"
+    ]
+  },
+  "request": {
+    "method": "PUT",
+    "url": "https://www.carrefour.fr/api/cart/slot",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {},
+    "body": {
+      "slotRef": {
+        "$param": "slotRef"
+      },
+      "storeRef": {
+        "$param": "storeRef"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1238"
+  ]
+}

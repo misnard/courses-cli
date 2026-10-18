@@ -21,8 +21,12 @@ clap_complete = "4"
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
-# HTTP client with browser impersonation (for Cloudflare bypass)
-rquest = { version = "2", features = ["json", "cookies"] }
+# Requests run inside a real Chrome, driven over CDP (Cloudflare bypass)
+tungstenite = "0.30"
+url = "2"
+
+# Endpoint specs embedded in the binary
+include_dir = "0.7"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -36,11 +40,7 @@ thiserror = "2"
 dirs = "6"
 
 # Pretty output
-tabled = "0.17"
 colored = "3"
-
-# URL encoding
-urlencoding = "2"
 
 [profile.release]
 lto = true
