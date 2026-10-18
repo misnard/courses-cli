@@ -195,7 +195,7 @@ fn label(r: &Value) -> String {
 }
 
 /// Labels carry HTML entities: `Lait demi-&#233;cr&#233;m&#233;`.
-fn decode(s: &str) -> String {
+pub(super) fn decode(s: &str) -> String {
     let mut out = String::new();
     let mut rest = s;
     while let Some(i) = rest.find('&') {
