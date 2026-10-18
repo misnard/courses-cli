@@ -57,6 +57,7 @@ These commands work the same for every provider:
 ```bash
 courses search "yogurt" --brand Danone --available --limit 5
 courses search "coffee" --format json      # normalized JSON for scripting
+courses search "nutella" --nutriscore      # fill missing Nutri-Scores from Open Food Facts
 courses cart show [--format json]
 courses cart add <ID> [--quantity 3]       # sets the quantity: not a delta
 courses cart update <ID> --quantity 5
@@ -126,6 +127,15 @@ session, so you can book the slot and pay on leclercdrive.fr. The same window
 clears a DataDome captcha if one ever blocks the CLI.
 
 Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
+
+### Nutri-Score from Open Food Facts
+
+`courses search nutella --nutriscore` fills in the Nutri-Score (A to E) from
+[Open Food Facts](https://world.openfoodfacts.org) for products the store shows
+without one, by EAN, for every provider that returns EANs. It makes one batched
+anonymous request, plus one per product missing from OFF's search index, and
+only when something needs filling; without the flag, Open Food Facts is never
+contacted. Data © Open Food Facts contributors, ODbL.
 
 ### Shell Completions
 
