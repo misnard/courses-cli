@@ -18,7 +18,7 @@ pay on the site.
 | Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
 | E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
 | Chronodrive | `chronodrive` | | | | | in progress |
-| Intermarché | `intermarche` | | | | | in progress |
+| Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan | `auchan` | | | | | in progress |
 | Super U | `superu` | | | | | in progress |
 | Casino proximité | `casino` | | | | | in progress |
