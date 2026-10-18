@@ -8,7 +8,12 @@
 //! - `/recherche?q=`: one `<li data-tile>` per product, its record as JSON in
 //!   `data-tc-product-tile`. Prices show once the session is bound to a store
 //!   by `Stores-SetStoreWeb` (POST storeId + the page's `csrf_token`); the
-//!   page's `tc_vars` then carry `"store_id":"<id>"`.
+//!   page's `tc_vars` then carry `"store_id":"<id>"`. Each page links the
+//!   next 18 products in its `.infinite-scroll-placeholder`'s
+//!   `data-grid-url` (`&start=18&sz=18&format=page-element`), which the
+//!   site's infinite scroll (`categorypage.js`) GETs as an XHR.
+//! - A tile without the add-to-cart button (`data-bag`) is out of stock: the
+//!   site's own script sorts those last.
 //! - `StoreLocator-Autocomplete?query=`: places (postal code, town,
 //!   coordinates); `StoreLocator-GeolocateByCPandCity`: the stores near one.
 
@@ -64,9 +69,20 @@ impl Superu {
 }
 
 impl Shop for Superu {
-    // ponytail: first page only (18 products); `sz` is ignored, paging needs Search-ShowContent.
-    fn search(&mut self, query: &str, _limit: u32) -> Result<Vec<Product>> {
-        Ok(products(&self.search_page(query)?))
+    /// Loads further pages, as the site's infinite scroll does, until `limit`.
+    fn search(&mut self, query: &str, limit: u32) -> Result<Vec<Product>> {
+        let mut html = self.search_page(query)?;
+        let mut found = products(&html);
+        while found.len() < limit as usize {
+            let Some(next) = next_page(&html) else { break };
+            html = self.web.send(HOME, "GET", url::Url::parse(HOME)?.join(&next)?.as_str(), AJAX, None)?;
+            let more = products(&html);
+            if more.is_empty() {
+                break;
+            }
+            found.extend(more);
+        }
+        Ok(found)
     }
 
     fn find_stores(&mut self, query: &str) -> Result<Vec<Store>> {
@@ -128,7 +144,18 @@ fn text(html: &str) -> String {
 }
 
 fn products(html: &str) -> Vec<Product> {
-    html.split("<li data-tile=").skip(1).filter_map(product).collect()
+    // A tile ends at its first `</li>` (it holds no list); the last one would
+    // otherwise run to the end of the page.
+    html.split("<li data-tile=").skip(1).filter_map(|t| product(t.split("</li>").next()?)).collect()
+}
+
+/// The URL of the next page of results, while the grid says there is one.
+fn next_page(html: &str) -> Option<String> {
+    let tag = between(html, "class=\"infinite-scroll-placeholder\"", ">")?;
+    if !tag.contains("data-loading-state=\"unloaded\"") {
+        return None;
+    }
+    between(tag, "data-grid-url=\"", "\"").map(decode_html)
 }
 
 fn product(tile: &str) -> Option<Product> {
@@ -144,8 +171,11 @@ fn product(tile: &str) -> Option<Product> {
         unit_price: between(tile, "class=\"unit-info su-font-open\">", "<").map(text),
         nutriscore: between(tile, "alt=\"Nutriscore ", "\"").map(String::from),
         ean: s("EAN"),
-        // ponytail: no out-of-stock tile seen yet; a priced tile counts as available.
-        available: price.is_some(),
+        available: price.is_some() && tile.contains(" data-bag "),
+        // ponytail: the tile's quantity box; unverified with a non-empty cart (the CLI cannot fill one).
+        in_cart: between(tile, "name=\"Quantity\"", ">")
+            .and_then(|t| attr(t, "value")?.parse::<f64>().ok())
+            .map_or(0, |q| q as u32),
         ..Default::default()
     })
 }
@@ -178,14 +208,28 @@ mod tests {
 <span aria-hidden="true" data-sup-product-price data-item-price="6.96" class="sale-price su-font-mulish" role="text">6,96 €</span>
 <span class="unit-info-container">
     <span aria-hidden="true" class="unit-info su-font-open">1,16 &#8364;/l</span>
-</span></li>
-<li data-tile="0" data-page-number="0.0" data-tc-product-tile="{&quot;id&quot;:&quot;222&quot;,&quot;name&quot;:&quot;Lait&quot;,&quot;price&quot;:&quot;unknown&quot;}"></li></ul>"#;
+</span>
+<div data-global-login-cta="productAddition" data-slot-tc data-bag class="product-button__bag icon-bag" data-pid="7634896">
+<input type="number" name="Quantity" data-attr-quantity='1' data-max-quantity="6.0" value="2" inputmode="numeric" min="1" max="9999" autocomplete="off"/>
+</div></li>
+<li data-tile="0" data-page-number="0.0" data-tc-product-tile="{&quot;id&quot;:&quot;222&quot;,&quot;name&quot;:&quot;Lait&quot;,&quot;price&quot;:&quot;1.20&quot;}"></li></ul>
+<div class="infinite-scroll-placeholder"
+data-loading-state="unloaded"
+data-grid-url="/recherche?q=lait&amp;start=18&amp;sz=18&amp;format=page-element"
+data-loading-state-prev="loaded"
+data-grid-url-prev="/recherche?q=lait">
+</div>
+<div data-bag class="page-tail"></div>"#;
         let p = products(search);
         assert_eq!(p.len(), 2);
         assert_eq!((p[0].id.as_str(), p[0].name.as_str()), ("7634896", "Lait UHT demi-écrémé - 6 bouteilles de 1L"));
         assert_eq!((p[0].brand.as_deref(), p[0].ean.as_deref()), (Some("PRODUIT U"), Some("3256225425617")));
         assert_eq!((p[0].price, p[0].unit_price.as_deref(), p[0].nutriscore.as_deref()), (Some(6.96), Some("1,16 €/l"), Some("B")));
+        // The second tile has a price but no add-to-cart button.
         assert!(p[0].available && !p[1].available);
+        assert_eq!((p[0].in_cart, p[1].in_cart), (2, 0));
+        assert_eq!(next_page(search).as_deref(), Some("/recherche?q=lait&start=18&sz=18&format=page-element"));
+        assert_eq!(next_page(&search.replace("\"unloaded\"", "\"loaded\"")), None);
 
         let place = r#"<li id="350000" data-autocomplete-trust="true" tabindex="0" role="option" data-prehome-city-suggestion class="ab-prehome-search-suggestion su-font-open" data-link-index="0" data-city-zipcode="35000" data-city-name="Rennes" data-lat-input="48.111339" data-long-input="-1.68002" data-cs-mask>"#;
         assert_eq!((attr(place, "data-city-zipcode"), attr(place, "data-lat-input")), (Some("35000"), Some("48.111339")));
