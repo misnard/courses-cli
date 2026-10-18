@@ -1,8 +1,9 @@
 //! Every carrefour.fr call runs as a `fetch` inside a real Chrome page.
 //!
 //! Cloudflare answers plain HTTP clients with `403 cf-mitigated: challenge`
-//! (reqwest/curl included); a full Chrome in new-headless mode, with the
-//! `HeadlessChrome` UA masked and `AutomationControlled` disabled, gets a 200.
+//! (reqwest/curl included), Leclerc's DataDome with a captcha; a full Chrome
+//! in new-headless mode, with the `HeadlessChrome` UA masked and
+//! `AutomationControlled` disabled, gets a 200 from both.
 //! We talk to it with a minimal hand-rolled CDP client.
 
 use anyhow::{anyhow, bail, Context};
@@ -38,13 +39,36 @@ pub fn chrome_path() -> Res<PathBuf> {
         .ok_or_else(|| anyhow!("Chrome not found; set CARREFOUR_CHROME to its executable"))
 }
 
+/// Chrome's own (reduced) UA without "HeadlessChrome". Given as a flag, not a
+/// CDP override: the override leaves the client-hint brands empty or made up,
+/// and DataDome answers that with a captcha.
+fn user_agent(chrome: &Path) -> Res<String> {
+    if let Ok(ua) = std::env::var("CARREFOUR_USER_AGENT") {
+        return Ok(ua);
+    }
+    let out = Command::new(chrome).arg("--version").output().context("cannot run Chrome")?;
+    let version = String::from_utf8_lossy(&out.stdout);
+    let major = version
+        .split_whitespace()
+        .find_map(|w| w.split('.').next().filter(|m| m.parse::<u32>().is_ok()).map(String::from))
+        .ok_or_else(|| anyhow!("unexpected 'chrome --version' output: {version}"))?;
+    let os = match std::env::consts::OS {
+        "macos" => "Macintosh; Intel Mac OS X 10_15_7",
+        "windows" => "Windows NT 10.0; Win64; x64",
+        _ => "X11; Linux x86_64",
+    };
+    Ok(format!("Mozilla/5.0 ({os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major}.0.0.0 Safari/537.36"))
+}
+
 pub fn spawn_chrome(profile: &Path, port: u16, headless: bool, url: &str) -> Res<Child> {
-    let mut cmd = Command::new(chrome_path()?);
+    let chrome = chrome_path()?;
+    let mut cmd = Command::new(&chrome);
     cmd.arg(format!("--user-data-dir={}", profile.display()))
         .arg(format!("--remote-debugging-port={port}"))
         .args(["--no-first-run", "--no-default-browser-check", "--lang=fr-FR"]);
     if headless {
-        cmd.args(["--headless=new", "--disable-blink-features=AutomationControlled"]);
+        cmd.args(["--headless=new", "--disable-blink-features=AutomationControlled"])
+            .arg(format!("--user-agent={}", user_agent(&chrome)?));
     }
     cmd.arg(url)
         .stdout(Stdio::null())
@@ -139,14 +163,14 @@ impl Cdp {
         }
     }
 
-    /// The browser's cookies, restricted to Carrefour and in `CookieParam` shape.
-    pub fn cookies(&mut self) -> Res<Vec<Value>> {
+    /// The browser's cookies for `domain` and its subdomains, in `CookieParam` shape.
+    pub fn cookies(&mut self, domain: &str) -> Res<Vec<Value>> {
         let all = self.call("Storage.getCookies", json!({}), None)?;
         Ok(all["cookies"]
             .as_array()
             .into_iter()
             .flatten()
-            .filter(|c| c["domain"].as_str().is_some_and(|d| d.ends_with("carrefour.fr")))
+            .filter(|c| c["domain"].as_str().is_some_and(|d| d.ends_with(domain)))
             .map(|c| {
                 let mut p = json!({});
                 for k in ["name", "value", "domain", "path", "secure", "httpOnly", "sameSite"] {
@@ -172,18 +196,17 @@ pub struct Response {
 pub struct Browser {
     cdp: Cdp,
     child: Child,
-    ua: String,
     /// One parked page per origin: an in-page fetch is subject to CORS.
     pages: HashMap<String, String>,
 }
 
 impl Browser {
     // ponytail: the profile is single-instance, so two concurrent CLI calls collide.
-    pub fn launch(profile: &Path, cookies: &[Value]) -> Res<Browser> {
+    pub fn launch(profile: &Path, cookies: &[Value], headless: bool) -> Res<Browser> {
         std::fs::create_dir_all(profile)?;
         let port_file = profile.join("DevToolsActivePort");
         let _ = std::fs::remove_file(&port_file);
-        let mut child = spawn_chrome(profile, 0, true, "about:blank")?;
+        let mut child = spawn_chrome(profile, 0, headless, "about:blank")?;
 
         let deadline = Instant::now() + Duration::from_secs(20);
         let ws_url = loop {
@@ -201,14 +224,10 @@ impl Browser {
         };
 
         let mut cdp = Cdp::connect(&ws_url)?;
-        let version = cdp.call("Browser.getVersion", json!({}), None)?;
-        let ua = std::env::var("CARREFOUR_USER_AGENT").unwrap_or_else(|_| {
-            version["userAgent"].as_str().unwrap_or("").replace("HeadlessChrome", "Chrome")
-        });
         if !cookies.is_empty() {
             cdp.call("Storage.setCookies", json!({"cookies": cookies}), None)?;
         }
-        Ok(Browser { cdp, child, ua, pages: HashMap::new() })
+        Ok(Browser { cdp, child, pages: HashMap::new() })
     }
 
     fn new_page(&mut self) -> Res<String> {
@@ -216,11 +235,6 @@ impl Browser {
         let a = self.cdp.call("Target.attachToTarget", json!({"targetId": t["targetId"], "flatten": true}), None)?;
         let sid = a["sessionId"].as_str().ok_or_else(|| anyhow!("no sessionId"))?.to_string();
         self.cdp.call("Page.enable", json!({}), Some(&sid))?;
-        self.cdp.call(
-            "Network.setUserAgentOverride",
-            json!({"userAgent": self.ua, "acceptLanguage": "fr-FR,fr;q=0.9"}),
-            Some(&sid),
-        )?;
         Ok(sid)
     }
 
@@ -255,20 +269,34 @@ impl Browser {
         out
     }
 
-    fn page_for(&mut self, origin: &str) -> Res<String> {
+    /// Open `url` in a tab left open, for a human to use (visible browser).
+    pub fn open(&mut self, url: &str) -> Res<()> {
+        let sid = self.new_page()?;
+        self.goto(&sid, url).map(|_| ())
+    }
+
+    fn page_for(&mut self, origin: &str, park: &str) -> Res<String> {
         if let Some(sid) = self.pages.get(origin) {
             return Ok(sid.clone());
         }
         let sid = self.new_page()?;
-        // The IAM root aborts; its login UI loads. A 404 elsewhere is fine: we only need the origin.
-        let park = if origin == crate::session::IAM_ORIGIN { "/iam/XUI/" } else { "/" };
-        let _ = self.goto(&sid, &format!("{origin}{park}"));
+        let _ = self.goto(&sid, park);
         self.pages.insert(origin.into(), sid.clone());
         Ok(sid)
     }
 
     pub fn fetch(&mut self, req: &crate::spec::Request) -> Res<Response> {
         let origin = url::Url::parse(&req.url)?.origin().ascii_serialization();
+        // The IAM root aborts; its login UI loads. A 404 elsewhere is fine: we only need the origin.
+        let park = if origin == crate::session::IAM_ORIGIN { "/iam/XUI/" } else { "/" };
+        self.fetch_from(&format!("{origin}{park}"), req)
+    }
+
+    /// `fetch` from a page parked on `page`, for sites whose bot check needs
+    /// its script to have run on a real HTML page (DataDome). `page` must be
+    /// same-origin with the request, or allowed by its CORS policy.
+    pub fn fetch_from(&mut self, page: &str, req: &crate::spec::Request) -> Res<Response> {
+        let origin = url::Url::parse(page)?.origin().ascii_serialization();
         let mut payload = json!({"method": req.method, "url": req.url, "headers": req.headers});
         payload["headers"]["accept"] = json!(req.headers.get("accept").and_then(Value::as_str).unwrap_or("application/json, text/plain, */*"));
         match &req.body {
@@ -285,7 +313,7 @@ impl Browser {
             }})({payload})"
         );
         let run = |b: &mut Browser| -> Res<Response> {
-            let sid = b.page_for(&origin)?;
+            let sid = b.page_for(&origin, page)?;
             let v = b.eval(&sid, &expr)?;
             Ok(Response {
                 status: v["status"].as_u64().unwrap_or(0) as u16,
@@ -302,8 +330,8 @@ impl Browser {
         })
     }
 
-    pub fn cookies(&mut self) -> Res<Vec<Value>> {
-        self.cdp.cookies()
+    pub fn cookies(&mut self, domain: &str) -> Res<Vec<Value>> {
+        self.cdp.cookies(domain)
     }
 }
 

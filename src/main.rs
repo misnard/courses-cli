@@ -3,22 +3,32 @@ mod client;
 mod commands;
 mod config;
 mod error;
+mod leclerc;
 mod models;
 mod session;
 mod spec;
 
-use anyhow::Result;
-use clap::{CommandFactory, Parser, Subcommand};
+use anyhow::{bail, Result};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{generate, Shell};
 use commands::{api, auth, cart, search, slots};
 use std::io;
 
 #[derive(Parser)]
 #[command(name = "carrefour")]
-#[command(about = "CLI tool to search and order from Carrefour", long_about = None)]
+#[command(about = "CLI tool to search and order from Carrefour or E.Leclerc Drive", long_about = None)]
 struct Cli {
+    /// Store chain to shop at
+    #[arg(long, global = true, value_enum, env = "CARREFOUR_PROVIDER", default_value = "carrefour")]
+    provider: Provider,
     #[command(subcommand)]
     command: Commands,
+}
+
+#[derive(Clone, Copy, PartialEq, ValueEnum)]
+enum Provider {
+    Carrefour,
+    Leclerc,
 }
 
 #[derive(Subcommand)]
@@ -67,6 +77,14 @@ enum Commands {
         /// Confirm endpoints that charge a real payment
         #[arg(long)]
         yes: bool,
+    },
+    /// Find a drive near a postal code or city and pick it (Leclerc)
+    Store {
+        /// Postal code or city (none: show the picked store)
+        query: Option<String>,
+        /// Store id from the list to shop at
+        #[arg(long)]
+        pick: Option<String>,
     },
     /// Show current configuration
     Config,
@@ -117,7 +135,7 @@ enum CartCommands {
     },
     /// Add product to cart
     Add {
-        /// Product EAN (barcode)
+        /// Product EAN (barcode); Leclerc: product ID from search
         ean: String,
         /// Quantity
         #[arg(short, long, default_value = "1")]
@@ -125,12 +143,12 @@ enum CartCommands {
     },
     /// Remove product from cart
     Remove {
-        /// Product EAN (barcode)
+        /// Product EAN (barcode); Leclerc: product ID from search
         ean: String,
     },
     /// Update product quantity in cart
     Update {
-        /// Product EAN (barcode)
+        /// Product EAN (barcode); Leclerc: product ID from search
         ean: String,
         /// New quantity
         #[arg(short, long)]
@@ -158,8 +176,34 @@ enum SlotsCommands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+    let leclerc = cli.provider == Provider::Leclerc;
 
     match cli.command {
+        Commands::Auth { action } if leclerc => match action {
+            AuthCommands::Login => leclerc::login()?,
+            AuthCommands::Status => leclerc::status()?,
+            AuthCommands::Logout => {
+                leclerc::logout()?;
+                println!("Session cleared.");
+            }
+            _ => bail!("Only login, status and logout exist for Leclerc."),
+        },
+        Commands::Search { query, limit, format, brand, available } if leclerc => {
+            leclerc::search(&query, limit, &format, brand.as_deref(), available)?
+        }
+        Commands::Cart { action } if leclerc => match action {
+            CartCommands::Show { format } => leclerc::show_cart(&format)?,
+            CartCommands::Add { ean, quantity } | CartCommands::Update { ean, quantity } => {
+                leclerc::set_quantity(&ean, quantity)?
+            }
+            CartCommands::Remove { ean } => leclerc::set_quantity(&ean, 0)?,
+            CartCommands::Clear => leclerc::clear_cart()?,
+        },
+        Commands::Slots { .. } | Commands::Api { .. } if leclerc => {
+            bail!("Not available for Leclerc yet: book the slot on leclercdrive.fr.")
+        }
+        Commands::Store { query, pick } if leclerc => leclerc::store_cmd(query.as_deref(), pick.as_deref())?,
+        Commands::Store { .. } => bail!("Pick your Carrefour store on carrefour.fr, then run 'carrefour auth refresh'."),
         Commands::Auth { action } => match action {
             AuthCommands::Login => auth::login()?,
             AuthCommands::Refresh => auth::refresh()?,

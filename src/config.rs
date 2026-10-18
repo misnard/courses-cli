@@ -6,6 +6,8 @@ use std::path::PathBuf;
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
     pub store_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub leclerc_store: Option<crate::leclerc::Store>,
 }
 
 impl Config {
@@ -18,6 +20,13 @@ impl Config {
         } else {
             Ok(Config::default())
         }
+    }
+
+    pub fn save(&self) -> Result<()> {
+        let path = config_path()?;
+        fs::create_dir_all(path.parent().unwrap())?;
+        fs::write(&path, serde_json::to_string_pretty(self)?)
+            .with_context(|| format!("Failed to write config to {:?}", path))
     }
 }
 
@@ -50,6 +59,10 @@ pub fn show_config() -> Result<()> {
         println!("Store ID: {}", store_id);
     } else {
         println!("Store ID: not set");
+    }
+
+    if let Some(s) = &config.leclerc_store {
+        println!("Leclerc store: {} ({}, {})", s.name, s.id, s.host);
     }
 
     Ok(())
