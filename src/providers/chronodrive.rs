@@ -18,6 +18,10 @@
 //!   drops the line) and answers the line's new quantity. The site keeps the id
 //!   in its `chronoguest` cookie; we keep it in the picked store's `data.cart`,
 //!   so picking another store starts another cart, as on the site.
+//! - next pickup slot: `GET /slots?nextAvailable=true&siteIds=<store id>`.
+//! - checkout: our cart id goes into the site's `chronoguest` cookie and the
+//!   store into `chronosite` (JSON both, written by js-cookie in the bundle;
+//!   the server reads them to render the page), then `/cartdetail` is shown.
 
 use super::{save_store, store, str_of, Cart, CartLine, Product, Provider, Shop, Store, Web};
 use anyhow::{Context, Result};
@@ -59,6 +63,21 @@ impl Chronodrive {
             format!("Cannot read Chronodrive cart {id}; '{} store <postal code> --pick {}' starts a new one.", Provider::Chronodrive.cmd(), s.id)
         })
     }
+
+    /// "Next pickup: Lundi 19 octobre à 08h30" at store `site`.
+    fn next_slot(&mut self, site: &str) -> Result<Option<String>> {
+        let res = self.api("SLOTS", "GET", &format!("{API}/slots?nextAvailable=true&siteIds={site}"), None, None)?;
+        let Some(start) = res["content"][0]["startDate"].as_str() else { return Ok(None) };
+        // Chrome's Intl, in the stores' time zone, with the site's date format.
+        let expr = format!(
+            "(() => {{ const d = new Date({}), z = {{timeZone: 'Europe/Paris'}};
+                const day = d.toLocaleDateString('fr-FR', {{...z, weekday: 'long', day: 'numeric', month: 'long'}});
+                const time = d.toLocaleTimeString('fr-FR', {{...z, hour: '2-digit', minute: '2-digit'}});
+                return day[0].toUpperCase() + day.slice(1) + ' à ' + time.replace(':', 'h'); }})()",
+            json!(start)
+        );
+        Ok(self.web.browser.eval_in(HOME, &expr)?.as_str().map(|d| format!("Next pickup: {d}")))
+    }
 }
 
 impl Shop for Chronodrive {
@@ -72,10 +91,11 @@ impl Shop for Chronodrive {
 
     fn cart(&mut self) -> Result<Cart> {
         let s = store(Provider::Chronodrive)?;
-        match s.data["cart"].as_str() {
-            Some(id) => Ok(cart_of(&self.read_cart(&s, id)?)),
-            None => Ok(Cart::default()),
-        }
+        let Some(id) = s.data["cart"].as_str() else { return Ok(Cart::default()) };
+        let mut cart = cart_of(&self.read_cart(&s, id)?);
+        // Only a hint: a slot hiccup must not hide the cart.
+        cart.note = self.next_slot(&s.id).ok().flatten();
+        Ok(cart)
     }
 
     fn set_quantity(&mut self, id: &str, quantity: u32) -> Result<u32> {
@@ -122,6 +142,13 @@ impl Shop for Chronodrive {
     fn signed_in(&mut self) -> Result<bool> {
         Ok(false)
     }
+
+    /// Signed in on the site, the window shows the account's cart instead.
+    fn checkout(&mut self) -> Result<()> {
+        let s = store(Provider::Chronodrive)?;
+        self.web.browser.set_cookies(site_cookies(&s))?;
+        self.web.show(&format!("{HOME}cartdetail"), "Book a slot and pay")
+    }
 }
 
 // ------------------------------------------------------------------ parsing
@@ -159,6 +186,23 @@ fn cart_of(c: &Value) -> Cart {
         })
         .collect();
     Cart { lines, total: c["amounts"]["totalCartAmount"].as_f64(), note: None }
+}
+
+/// The site's `chronosite` (store) and `chronoguest` (anonymous cart id)
+/// cookies, for `Browser::set_cookies`. The bundle writes their JSON with
+/// js-cookie, which percent-encodes it but keeps `{}:` as they are.
+// ponytail: only `"` and `,` are encoded, enough for ASCII ids. Overwriting
+// `chronoguest` also drops the site's search history in the CLI's profile.
+fn site_cookies(s: &Store) -> Value {
+    let cookie = |name: &str, v: Value| {
+        let value = v.to_string().replace('"', "%22").replace(',', "%2C");
+        json!({"name": name, "value": value, "url": HOME, "sameSite": "Lax"})
+    };
+    let mut cookies = vec![cookie("chronosite", json!({"driveId": s.id, "id": s.id, "mode": "DRIVE"}))];
+    if let Some(cart) = s.data["cart"].as_str() {
+        cookies.push(cookie("chronoguest", json!({"cartId": cart})));
+    }
+    json!(cookies)
 }
 
 /// Coordinates come as strings.
@@ -226,5 +270,10 @@ mod tests {
         let near = nearest(&sites, (50.6311, 3.0468)); // Lille 59000
         assert_eq!(near.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), ["1001", "1036"]);
         assert_eq!(near[0].info, "59700, 6.3 km");
+
+        let s = Store { id: "1048".into(), data: json!({"cart": "260a0f62-df38"}), ..Store::default() };
+        let c = site_cookies(&s);
+        assert_eq!(c[0]["value"], r#"{%22driveId%22:%221048%22%2C%22id%22:%221048%22%2C%22mode%22:%22DRIVE%22}"#);
+        assert_eq!((c[1]["name"].as_str(), c[1]["value"].as_str()), (Some("chronoguest"), Some(r#"{%22cartId%22:%22260a0f62-df38%22}"#)));
     }
 }
