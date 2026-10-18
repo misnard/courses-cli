@@ -4,13 +4,15 @@
 //! the endpoints only). Store finder and cart persistence come from the site's
 //! own Nuxt bundle.
 //!
-//! Every call goes to `https://api.chronodrive.com/v1` from a parked
-//! www.chronodrive.com page (CORS allows it). Each service has its own public
-//! `x-api-key`, read from that page's `window.__NUXT__.config.public`;
+//! Every call goes to `https://api.chronodrive.com/v1` from a tab parked on
+//! that same origin: its CORS answer is `*` without credentials, which the
+//! credentialed in-page fetch of `browser.rs` cannot use from another origin.
+//! Each service has its own public `x-api-key`, read from the homepage's
+//! `window.__NUXT__.config.public` (a second parked tab);
 //! `x-chronodrive-site-id` names the store, `x-chronodrive-site-mode: DRIVE`.
 //! - search: `GET /products?searchTerm=&page=&size=`
 //! - stores: `GET /cities?searchTerm=<cp or city>` gives coordinates, then
-//!   `GET /sites` lists every store (55) and we sort them by distance.
+//!   `GET /sites` lists every store (55 in Oct. 2026), sorted here by distance.
 //! - cart: anonymous. `POST /carts` creates one, `GET /carts/{id}` reads it,
 //!   `POST /carts/{id}/items` takes a quantity DELTA (negative removes, 0
 //!   drops the line) and answers the line's new quantity. The site keeps the id
@@ -23,6 +25,8 @@ use serde_json::{json, Value};
 
 const HOME: &str = "https://www.chronodrive.com/";
 const API: &str = "https://api.chronodrive.com/v1";
+/// Any page of the API's origin will do: requests from it are same-origin.
+const API_PAGE: &str = "https://api.chronodrive.com/";
 
 pub struct Chronodrive {
     web: Web,
@@ -45,7 +49,7 @@ impl Chronodrive {
         if let Some(site) = site {
             headers.extend([("x-chronodrive-site-id", site), ("x-chronodrive-site-mode", "DRIVE")]);
         }
-        self.web.json(HOME, method, url, &headers, body)
+        self.web.json(API_PAGE, method, url, &headers, body)
     }
 
     fn read_cart(&mut self, s: &Store, id: &str) -> Result<Value> {
@@ -171,11 +175,11 @@ fn nearest(sites: &Value, here: (f64, f64)) -> Vec<Store> {
         .filter_map(|s| {
             let (loc, geo) = (&s["location"], &s["location"]["geolocation"]);
             let d = km(here, (num(&geo["latitude"])?, num(&geo["longitude"])?));
-            let city = loc["city"].as_str().unwrap_or("").trim();
             let store = Store {
                 id: str_of(&s["id"])?,
+                // The location's city repeats the name, so it is left out.
                 name: s["name"].as_str().unwrap_or("").into(),
-                info: format!("{} {city}, {d:.1} km", loc["zipCode"].as_str().unwrap_or("")),
+                info: format!("{}, {d:.1} km", loc["zipCode"].as_str().unwrap_or("")),
                 data: Value::Null,
             };
             Some((d, store))
@@ -221,6 +225,6 @@ mod tests {
             {"id": "9999", "name": "No coordinates", "location": {}}]});
         let near = nearest(&sites, (50.6311, 3.0468)); // Lille 59000
         assert_eq!(near.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), ["1001", "1036"]);
-        assert_eq!(near[0].info, "59700 Marcq en Baroeul, 6.3 km");
+        assert_eq!(near[0].info, "59700, 6.3 km");
     }
 }
