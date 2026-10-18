@@ -33,6 +33,9 @@ impl Config {
 
 /// Holds config.json, and each provider's cookie jar and Chrome profile.
 pub fn config_dir() -> Result<PathBuf> {
+    if let Ok(dir) = std::env::var("COURSES_CONFIG_DIR") {
+        return Ok(dir.into());
+    }
     let base = dirs::config_dir().context("Could not find config directory")?;
     let dir = base.join("courses-cli");
     // ponytail: one-time move from when the tool was carrefour-cli; drop it in a later release.

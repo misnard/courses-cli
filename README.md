@@ -145,7 +145,8 @@ next to it:
 - Linux: `~/.config/courses-cli/`
 - macOS: `~/Library/Application Support/courses-cli/`
 
-A `carrefour-cli` directory from older versions is moved there on first run.
+`COURSES_CONFIG_DIR` points elsewhere (tests, several accounts). A
+`carrefour-cli` directory from older versions is moved there on first run.
 
 ## Troubleshooting
 
