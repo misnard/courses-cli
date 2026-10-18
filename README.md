@@ -21,7 +21,7 @@ pay on the site.
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan Drive | `auchan` | ✓ | ✓ | ✓ | ✓ (unverified) | drives and pick-up points |
 | Super U | `superu` | ✓ | ✓ | — | ✓ (unverified) | prices per picked store, Nutri-Score, EAN |
-| Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | Petit Casino, Casino Shop, Spar, Vival |
+| Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | checkout, next pickup; Petit Casino, Casino Shop, Spar, Vival |
 
 Pick the provider per command (`courses --provider leclerc search lait`) or once
 for the shell (`export COURSES_PROVIDER=leclerc`).
@@ -63,6 +63,7 @@ courses cart add <ID> [--quantity 3]       # sets the quantity: not a delta
 courses cart update <ID> --quantity 5
 courses cart remove <ID>
 courses cart clear
+courses checkout                           # the cart on the site, in a window: book a slot and pay
 courses store [<postal code or city> [--pick <id>]]
 courses auth login | status | logout
 courses config
@@ -70,6 +71,11 @@ courses config
 
 `cart add` fails when the cart does not end up holding the requested quantity
 (unknown ID, not enough stock).
+
+An anonymous cart only exists in the CLI's own Chrome profile, not in your
+usual browser: `courses checkout` opens it on the site, in a window of that
+profile, to book the slot and pay. `cart show` prints the next pickup slot when
+the site gives it.
 
 ### Carrefour
 
