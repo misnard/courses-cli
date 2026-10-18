@@ -20,7 +20,7 @@ pay on the site.
 | Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan | `auchan` | | | | | in progress |
-| Super U | `superu` | | | | | in progress |
+| Super U | `superu` | ✓ | ✓ | — | ✓ (unverified) | prices per picked store, Nutri-Score, EAN |
 | Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | Petit Casino, Casino Shop, Spar, Vival |
 
 Pick the provider per command (`courses --provider leclerc search lait`) or once
@@ -141,6 +141,19 @@ The cart is anonymous and tied to the picked drive: picking another drive
 starts a new one. The CLI does not use a Chronodrive account (`auth login` only
 clears a bot check). Endpoints partly from
 [chronodrive-mcp](https://github.com/ncleton/chronodrive-mcp) (MIT).
+
+### Super U
+
+```bash
+courses --provider superu store 35000              # stores near a postal code or town
+courses --provider superu store 35000 --pick 38672
+courses --provider superu search "lait" -l 5
+```
+
+The first search binds the session to the picked store (two extra requests).
+Only the first page of results comes back (18 products). No cart: coursesu.com
+gives guests a cart only in an A/B test, otherwise it needs an account. Search
+from [cli-drive-u](https://github.com/nmorvil/cli-drive-u) (MIT).
 
 ### Casino proximité
 
