@@ -16,7 +16,7 @@ pay on the site.
 | Provider | `--provider` | Store finder | Search | Cart | Login | Extras |
 | --- | --- | --- | --- | --- | --- | --- |
 | Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
-| E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
+| E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ (unverified) | |
 | Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan Drive | `auchan` | ✓ | ✓ | ✓ | ✓ (unverified) | drives and pick-up points |
