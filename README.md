@@ -17,7 +17,7 @@ pay on the site.
 | --- | --- | --- | --- | --- | --- | --- |
 | Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
 | E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ (unverified) | checkout, next pickup |
-| Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
+| Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | checkout, next pickup, Nutri-Score, EAN |
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan Drive | `auchan` | ✓ | ✓ | ✓ | ✓ (unverified) | drives and pick-up points |
 | Super U | `superu` | ✓ | ✓ | — | ✓ (unverified) | prices per picked store, Nutri-Score, EAN |
@@ -144,7 +144,9 @@ courses --provider chronodrive cart add 441443 -q 2
 ```
 
 The cart is anonymous and tied to the picked drive: picking another drive
-starts a new one. The CLI does not use a Chronodrive account (`auth login` only
+starts a new one. The site does not see it on its own: `checkout` hands it (and
+the store) to the site in its own cookies; signed in on the site in that
+window, you see your account's cart instead. The CLI does not use a Chronodrive account (`auth login` only
 clears a bot check). Endpoints partly from
 [chronodrive-mcp](https://github.com/ncleton/chronodrive-mcp) (MIT).
 
