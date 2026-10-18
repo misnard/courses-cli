@@ -81,6 +81,9 @@ impl Shop for Superu {
                 break;
             }
             found.extend(more);
+            // A product can show again on the next page.
+            let mut seen = std::collections::HashSet::new();
+            found.retain(|p| seen.insert(p.id.clone()));
         }
         Ok(found)
     }
