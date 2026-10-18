@@ -1,0 +1,37 @@
+{
+  "name": "get_homepage_returning_banner",
+  "description": "Retrieves the returning user banner for the Carrefour France homepage. Returns a list of personalized product recommendations (with product ID, name, image URL, and optional highlight label such as 'promotion') tailored for returning users. Optionally limits the number of recommendations returned.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "number",
+        "description": "Maximum number of product recommendations to return (e.g. 4)."
+      }
+    },
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/homepage/returningBanner",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "limit": {
+        "$param": "limit"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0793",
+    "t_002_1091",
+    "t_002_1366",
+    "t_002_5466",
+    "t_003_0116"
+  ]
+}

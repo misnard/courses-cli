@@ -1,0 +1,73 @@
+{
+  "name": "get_eligible_drive_stores",
+  "description": "Retrieves a paginated list of Carrefour drive stores eligible for ordering near a given location on Carrefour France. Returns store details such as ID, name, reference, distance from the provided coordinates, banner, address, format, order type, and opening patterns. Useful for finding nearby drive/click-and-collect stores available for a specific city or postal code.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "latitude": {
+        "type": "number",
+        "description": "Latitude of the location to search around (e.g. 45.77668)"
+      },
+      "longitude": {
+        "type": "number",
+        "description": "Longitude of the location to search around (e.g. 3.07722)"
+      },
+      "postalCode": {
+        "type": "string",
+        "description": "Postal code of the city to search in (e.g. '63000')"
+      },
+      "city": {
+        "type": "string",
+        "description": "Name of the city to search in (e.g. 'Clermont-Ferrand')"
+      },
+      "page": {
+        "type": "number",
+        "description": "Page number for pagination (starts at 1)"
+      },
+      "limit": {
+        "type": "number",
+        "description": "Maximum number of stores to return per page (e.g. 50)"
+      }
+    },
+    "required": [
+      "latitude",
+      "longitude",
+      "postalCode",
+      "city"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/eligibility/drive",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "latitude": {
+        "$param": "latitude"
+      },
+      "longitude": {
+        "$param": "longitude"
+      },
+      "postalCode": {
+        "$param": "postalCode"
+      },
+      "city": {
+        "$param": "city"
+      },
+      "page": {
+        "$param": "page"
+      },
+      "limit": {
+        "$param": "limit"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_0934"
+  ]
+}

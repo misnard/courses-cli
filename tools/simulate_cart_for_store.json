@@ -1,0 +1,37 @@
+{
+  "name": "simulate_cart_for_store",
+  "description": "Simulates the current shopping cart against a specific store on Carrefour France to check product availability. Returns the count of unavailable products and their GTINs (barcodes) for the given store reference. Useful for determining which cart items cannot be fulfilled at a particular store before placing an order.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "storeRef": {
+        "type": "string",
+        "description": "The reference identifier of the store to simulate the cart against (e.g. '149')."
+      }
+    },
+    "required": [
+      "storeRef"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/cart/simulate",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "storeRef": {
+        "$param": "storeRef"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0618",
+    "t_002_0976",
+    "t_002_6023"
+  ]
+}

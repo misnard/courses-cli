@@ -1,0 +1,51 @@
+{
+  "name": "get_frequent_purchases",
+  "description": "Retrieves the authenticated user's frequently purchased products on Carrefour France. Returns a paginated list of products the user buys regularly, with product details (EAN, title, brand, category, images, links), facets for filtering (promotions, Carrefour brands, etc.), and pagination metadata. Optionally includes unavailable products.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "page": {
+        "type": "number",
+        "description": "Page number for pagination (starts at 1). Each page returns up to 30 products."
+      },
+      "displayUnavailable": {
+        "type": "number",
+        "description": "Set to 1 to include unavailable products in the results. Omit or set to 0 to show only available products."
+      }
+    },
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/mon-compte/achats-frequents",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "page": {
+        "$param": "page"
+      },
+      "displayUnavailable": {
+        "$param": "displayUnavailable"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1465",
+    "t_002_1891",
+    "t_002_2018",
+    "t_002_2192",
+    "t_002_2536",
+    "t_002_2986",
+    "t_002_3053",
+    "t_002_3210",
+    "t_002_3300",
+    "t_002_3474",
+    "t_002_3539",
+    "t_002_3662",
+    "t_002_3733"
+  ]
+}

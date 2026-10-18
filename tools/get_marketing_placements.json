@@ -1,0 +1,92 @@
+{
+  "name": "get_marketing_placements",
+  "description": "Retrieves marketing/advertising placements (e.g. sponsored products, banners) for a specific placement context on Carrefour France. The placement context is determined by the URL path segment (e.g. 'home', 'home_food', 'search', 'search_cross_sell', 'search_panel', 'pdp', 'pdp_cross_sell', 'category', 'category_cross_sell', 'basket', 'checkout'). Returns a list of ad placements with product details, beacons, and positioning information.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "placement": {
+        "type": "string",
+        "description": "The placement context to fetch marketing ads for. Examples: 'home', 'home_food', 'search', 'search_cross_sell', 'search_panel', 'pdp', 'pdp_cross_sell', 'category', 'category_cross_sell', 'basket', 'checkout'."
+      },
+      "searchTerm": {
+        "type": "string",
+        "description": "The search term or keyword context for the placement. Use an empty string for non-search placements (e.g. home, pdp, basket)."
+      },
+      "categories": {
+        "type": "array",
+        "description": "List of category names relevant to the current page context. Use an empty array for non-category placements."
+      },
+      "productFilters": {
+        "type": "array",
+        "description": "List of product filter objects ({key, value}) to narrow placement results. Typically includes a 'Platform' filter (e.g. ['Desktop']) and optionally a 'categoryId' filter for category/PDP pages."
+      }
+    },
+    "required": [
+      "placement",
+      "searchTerm",
+      "categories",
+      "productFilters"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/marketing/{placement}",
+    "headers": {
+      "content-type": "application/json",
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": {
+      "searchTerm": {
+        "$param": "searchTerm"
+      },
+      "categories": {
+        "$param": "categories"
+      },
+      "productFilters": {
+        "$param": "productFilters"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_001_0603",
+    "t_002_0062",
+    "t_002_0475",
+    "t_002_0717",
+    "t_002_1035",
+    "t_002_1313",
+    "t_002_2364",
+    "t_002_2365",
+    "t_002_2596",
+    "t_002_2612",
+    "t_002_2768",
+    "t_002_2779",
+    "t_002_3873",
+    "t_002_3877",
+    "t_002_4004",
+    "t_002_4014",
+    "t_002_4073",
+    "t_002_4086",
+    "t_002_4158",
+    "t_002_4162",
+    "t_002_4315",
+    "t_002_4435",
+    "t_002_4438",
+    "t_002_4576",
+    "t_002_4592",
+    "t_002_4700",
+    "t_002_4784",
+    "t_002_4808",
+    "t_002_4982",
+    "t_002_4986",
+    "t_002_5149",
+    "t_002_5159",
+    "t_002_5452",
+    "t_003_0075",
+    "t_003_0958",
+    "t_003_0969"
+  ]
+}

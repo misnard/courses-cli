@@ -1,0 +1,82 @@
+{
+  "name": "submit_checkout_payment",
+  "description": "Submits payment method selection for the authenticated user's checkout on Carrefour France. Sends the chosen payment methods (e.g. credit card by saved card ID, loyalty card with a specific amount) for a given basket service type (e.g. 'driveclcv' for drive click-and-collect). Returns the total and remaining amounts, available payment methods with provider tokens/URLs (Apple Pay, CB credit card, card pass, etc.), saved payment methods, and the payment group. Useful for initiating the payment step during checkout.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "checkout_type": {
+        "type": "string",
+        "description": "The basket service type for the checkout (e.g. 'driveclcv' for drive click-and-collect). Sent as the 'checkout-type' request header."
+      },
+      "device_fingerprint_id": {
+        "type": "string",
+        "description": "A device fingerprint ID used for fraud prevention, sent as the 'device-fingerprint-id' request header."
+      },
+      "apple_pay": {
+        "type": "string",
+        "description": "Whether Apple Pay is available on the user's device. Sent as string 'true' or 'false' in the 'apple-pay' header."
+      },
+      "google_pay": {
+        "type": "string",
+        "description": "Whether Google Pay is available on the user's device. Sent as string 'true' or 'false' in the 'google-pay' header."
+      },
+      "is_shortcut": {
+        "type": "boolean",
+        "description": "Whether this is a shortcut/express checkout flow. Usually false for standard checkout."
+      },
+      "professional": {
+        "type": "string",
+        "description": "Professional account indicator. Usually null for standard consumers."
+      },
+      "payments": {
+        "type": "array",
+        "description": "List of payment method objects to apply. Each object can have: 'type' (e.g. 'CB' for credit card, 'CRF_LOYALTY_CARD' for Carrefour loyalty card), 'cardId' (for saved credit cards), and 'price' (object with 'value' in cents and 'scale' for fractional digits, used when partially paying with loyalty points). An empty array triggers retrieval of available payment methods."
+      }
+    },
+    "required": [
+      "checkout_type",
+      "device_fingerprint_id",
+      "payments"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/checkout/payment",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "checkout-type": {
+        "$param": "checkout_type"
+      },
+      "device-fingerprint-id": {
+        "$param": "device_fingerprint_id"
+      },
+      "apple-pay": {
+        "$param": "apple_pay"
+      },
+      "google-pay": {
+        "$param": "google_pay"
+      }
+    },
+    "body": {
+      "isShortcut": {
+        "$param": "is_shortcut"
+      },
+      "professional": {
+        "$param": "professional"
+      },
+      "payments": {
+        "$param": "payments"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_6068",
+    "t_002_6116",
+    "t_002_6121"
+  ]
+}

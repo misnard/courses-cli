@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrefour CLI</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --text: #1a1d23; --muted: #6b7280; --border: #e3e5e9;
+    --brand: #0970e6; --ok: #15803d; --warn: #b45309; --err: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111317; --card: #1a1d23; --text: #e8eaed; --muted: #9aa0a8; --border: #2c3038;
+      --brand: #4c9bff; --ok: #4ade80; --warn: #fbbf24; --err: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, sans-serif; }
+  main { max-width: 560px; margin: 48px auto; padding: 0 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 16px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--err); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  button:disabled { opacity: .5; cursor: wait; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  textarea { width: 100%; min-height: 90px; margin: 12px 0 8px; padding: 8px; font: 13px ui-monospace, monospace; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+  #msg { min-height: 1.5em; margin: 12px 0 0; }
+  .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Carrefour CLI</h1>
+  <p class="sub">Session carrefour.fr partagée avec la commande <code>carrefour</code>.</p>
+
+  <section>
+    <h2>Session</h2>
+    <dl id="status"><dt>État</dt><dd>Chargement…</dd></dl>
+    <div class="row">
+      <button class="primary" id="login">Se connecter</button>
+      <button id="refresh">Renouveler</button>
+      <button id="reload">Actualiser</button>
+      <button id="logout">Se déconnecter</button>
+    </div>
+    <p class="hint">« Se connecter » ouvre une fenêtre Chrome : connecte-toi (captcha + code e-mail) et laisse-la ouverte, elle se ferme toute seule.</p>
+    <p id="msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>Cookies</h2>
+    <div class="row">
+      <button id="copy">Copier (JSON)</button>
+      <button id="download">Télécharger cookies.json</button>
+    </div>
+    <label for="import-input" class="hint" style="display:block;margin-top:16px">Importer : en-tête Cookie, map JSON ou export JSON (tableau).</label>
+    <textarea id="import-input" spellcheck="false"></textarea>
+    <button id="import">Importer</button>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, { ...opts, headers: { 'x-carrefour-cli': '1' } });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+};
+const say = (text, cls = '') => { $('msg').textContent = text; $('msg').className = cls; };
+
+function row(label, value, cls = '') {
+  const dt = document.createElement('dt'); dt.textContent = label;
+  const dd = document.createElement('dd'); dd.textContent = value; dd.className = cls;
+  return [dt, dd];
+}
+
+async function loadStatus() {
+  $('status').replaceChildren(...row('État', 'Vérification… (quelques secondes)'));
+  try {
+    const s = await api('/api/status');
+    const rows = [];
+    if (s.name) {
+      rows.push(row('État', 'Connecté', 'ok'), row('Nom', s.name), row('E-mail', s.email || '—'));
+      if (s.loyalty) rows.push(row('Carte fidélité', s.loyalty));
+    } else {
+      rows.push(row('État', s.cookies ? 'Session anonyme' : 'Non connecté', 'warn'));
+    }
+    if (!s.sso_cookie) rows.push(row('SSO', 'absent — pas de renouvellement automatique', 'warn'));
+    else rows.push(s.sso_alive ? row('SSO', 'valide (24 h max, 60 min d’inactivité)', 'ok') : row('SSO', 'expiré — reconnecte-toi', 'err'));
+    rows.push(row('Cookies', String(s.cookies)));
+    $('status').replaceChildren(...rows.flat());
+  } catch (e) {
+    $('status').replaceChildren(...row('État', e.message, 'err'));
+  }
+}
+
+async function action(button, path, pending, done) {
+  const buttons = document.querySelectorAll('button');
+  buttons.forEach((b) => (b.disabled = true));
+  say(pending);
+  try {
+    const r = await api(path, { method: 'POST' });
+    say(done(r), 'ok');
+    await loadStatus();
+  } catch (e) {
+    say(e.message, 'err');
+  } finally {
+    buttons.forEach((b) => (b.disabled = false));
+  }
+}
+
+$('login').onclick = () => action($('login'), '/api/login', 'Fenêtre Chrome ouverte : connecte-toi…',
+  (r) => (r.sso ? 'Connecté.' : 'Connecté, mais sans cookie SSO : pas de renouvellement automatique.'));
+$('refresh').onclick = () => action($('refresh'), '/api/refresh', 'Renouvellement…', () => 'Session renouvelée.');
+$('logout').onclick = () => action($('logout'), '/api/logout', 'Déconnexion…', () => 'Session effacée.');
+$('reload').onclick = loadStatus;
+
+$('copy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(await api('/api/cookies'), null, 2));
+    say('Cookies copiés.', 'ok');
+  } catch (e) { say(e.message, 'err'); }
+};
+$('download').onclick = async () => {
+  try {
+    const blob = new Blob([JSON.stringify(await api('/api/cookies'), null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'cookies.json' });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) { say(e.message, 'err'); }
+};
+$('import').onclick = async () => {
+  try {
+    const r = await api('/api/cookies', { method: 'POST', body: $('import-input').value });
+    $('import-input').value = '';
+    say(`${r.imported} cookie(s) importé(s).${r.sso ? '' : ' Pas de cookie SSO.'}`, 'ok');
+    await loadStatus();
+  } catch (e) { say(e.message, 'err'); }
+};
+
+loadStatus();
+</script>
+</body>
+</html>

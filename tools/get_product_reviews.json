@@ -1,0 +1,54 @@
+{
+  "name": "get_product_reviews",
+  "description": "Retrieves customer reviews for a specific product on Carrefour France, identified by its EAN/GTIN. Returns the total review count and a paginated list of reviews. Supports sorting by field and order, and limiting the number of reviews returned.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "ean": {
+        "type": "string",
+        "description": "The EAN/GTIN barcode of the product to retrieve reviews for"
+      },
+      "limit": {
+        "type": "number",
+        "description": "Maximum number of reviews to return"
+      },
+      "sortField": {
+        "type": "string",
+        "description": "Field to sort reviews by (e.g. 'reviewDate')"
+      },
+      "sortOrder": {
+        "type": "string",
+        "description": "Sort order: 'asc' for ascending or 'desc' for descending"
+      }
+    },
+    "required": [
+      "ean"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/product/{ean}/reviews",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {
+      "limit": {
+        "$param": "limit"
+      },
+      "sortField": {
+        "$param": "sortField"
+      },
+      "sortOrder": {
+        "$param": "sortOrder"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": false,
+  "example_traces": [
+    "t_002_2769",
+    "t_002_4985"
+  ]
+}

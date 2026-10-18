@@ -1,0 +1,36 @@
+{
+  "name": "get_delivery_timeslots",
+  "description": "Retrieves available delivery or drive time slots for a specific facility/store service on Carrefour France. Returns a list of days with available time slot cells, indicating availability, dates, and collaborative delivery type. Useful for letting the user pick a delivery or click-and-collect time window.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "facilityServiceId": {
+        "type": "string",
+        "description": "The facility service identifier for the store or drive point (e.g. '0678-150-149'). Identifies the specific store/service for which to retrieve available time slots."
+      }
+    },
+    "required": [
+      "facilityServiceId"
+    ]
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/timeslots",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {
+      "facilityServiceId": {
+        "$param": "facilityServiceId"
+      }
+    },
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1203",
+    "t_002_6019"
+  ]
+}

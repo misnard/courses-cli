@@ -1,13 +1,16 @@
+mod browser;
 mod client;
 mod commands;
 mod config;
 mod error;
 mod models;
+mod session;
+mod spec;
 
 use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
-use commands::{auth, cart, search, slots};
+use commands::{api, auth, cart, search, slots};
 use std::io;
 
 #[derive(Parser)]
@@ -52,6 +55,19 @@ enum Commands {
         #[command(subcommand)]
         action: SlotsCommands,
     },
+    /// Call any of the 43 carrefour.fr endpoints (no name: list them)
+    Api {
+        /// Endpoint name, e.g. get_orders
+        name: Option<String>,
+        /// Parameters as param=value (arrays: JSON or comma list)
+        params: Vec<String>,
+        /// Show the endpoint's description and parameters
+        #[arg(short, long)]
+        describe: bool,
+        /// Confirm endpoints that charge a real payment
+        #[arg(long)]
+        yes: bool,
+    },
     /// Show current configuration
     Config,
     /// Generate shell completions
@@ -64,23 +80,26 @@ enum Commands {
 
 #[derive(Subcommand)]
 enum AuthCommands {
+    /// Sign in through a Chrome window (captcha + email code)
+    Login,
+    /// Renew the storefront session from the SSO cookie
+    Refresh,
+    /// Local web page to sign in and export/import cookies (127.0.0.1 only)
+    Serve {
+        #[arg(short, long, default_value = "8765")]
+        port: u16,
+    },
     /// Set session cookie (legacy, use 'cookies' for full support)
     Set {
         /// FRONTONE_SESSID cookie value from browser
         #[arg(short, long)]
         session: String,
     },
-    /// Set full cookie string (for Cloudflare bypass)
+    /// Import cookies: header string, JSON map, or JSON array export
     Cookies {
-        /// Full cookie string from browser (copy from DevTools)
+        /// Cookies from browser DevTools (a JSON array export keeps the SSO cookie)
         #[arg(short, long)]
         cookies: String,
-    },
-    /// Fetch cookies automatically via FlareSolverr (requires FlareSolverr running)
-    Flaresolverr {
-        /// FlareSolverr URL (default: http://localhost:8191/v1)
-        #[arg(short, long)]
-        url: Option<String>,
     },
     /// Show authentication status and user info
     Status,
@@ -142,6 +161,9 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Auth { action } => match action {
+            AuthCommands::Login => auth::login()?,
+            AuthCommands::Refresh => auth::refresh()?,
+            AuthCommands::Serve { port } => commands::serve::serve(port).await?,
             AuthCommands::Set { session } => {
                 auth::set_session(&session)?;
                 println!("Session saved successfully!");
@@ -149,9 +171,6 @@ async fn main() -> Result<()> {
             AuthCommands::Cookies { cookies } => {
                 auth::set_cookies(&cookies)?;
                 println!("Cookies saved successfully!");
-            }
-            AuthCommands::Flaresolverr { url } => {
-                auth::fetch_cookies_flaresolverr(url.as_deref()).await?;
             }
             AuthCommands::Status => {
                 auth::show_status().await?;
@@ -194,6 +213,16 @@ async fn main() -> Result<()> {
             SlotsCommands::Select { slot_ref } => {
                 slots::select_slot(&slot_ref).await?;
             }
+        },
+        Commands::Api {
+            name,
+            params,
+            describe,
+            yes,
+        } => match name {
+            None => api::list(),
+            Some(name) if describe => api::describe(&name)?,
+            Some(name) => api::call(&name, &params, yes)?,
         },
         Commands::Config => {
             config::show_config()?;

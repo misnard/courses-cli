@@ -1,0 +1,28 @@
+{
+  "name": "get_favorite_store",
+  "description": "Retrieves the authenticated user's favorite/preferred store on Carrefour France. Returns store details such as store ID, reference, GLN, name, postal code, store format, drive type, and available service modes (drive, home delivery, express delivery, click-and-collect, etc.).",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/favoritestore",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0565",
+    "t_002_0831",
+    "t_002_0879",
+    "t_002_0900",
+    "t_002_1131"
+  ]
+}

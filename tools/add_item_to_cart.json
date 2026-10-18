@@ -1,0 +1,110 @@
+{
+  "name": "add_item_to_cart",
+  "description": "Adds or updates a product item in the authenticated user's cart on Carrefour France. Allows specifying the product EAN, desired quantity, the basket service (store/drive), and the sub-basket type (e.g. drive click-and-collect). Also accepts a tracking context to indicate the page type and ID from which the action was triggered. Returns updated cart totals and summary.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "ean": {
+        "type": "string",
+        "description": "The EAN (barcode) of the product to add or update in the cart."
+      },
+      "counter": {
+        "type": "number",
+        "description": "The desired quantity of the product to set in the cart."
+      },
+      "basketServiceId": {
+        "type": "string",
+        "description": "The basket service ID identifying the store or drive service to use for the cart."
+      },
+      "subBasketType": {
+        "type": "string",
+        "description": "The sub-basket type, e.g. 'drive_clcv' for drive click-and-collect."
+      },
+      "pageType": {
+        "type": "string",
+        "description": "The type of page from which the add-to-cart action is triggered, used for tracking (e.g. 'moncompte', 'search', 'productdetail', 'basket')."
+      },
+      "pageId": {
+        "type": "string",
+        "description": "The page identifier used for tracking (e.g. 'moncompte', 'search', 'productdetail', 'basket')."
+      }
+    },
+    "required": [
+      "ean",
+      "counter",
+      "basketServiceId",
+      "subBasketType"
+    ]
+  },
+  "request": {
+    "method": "PATCH",
+    "url": "https://www.carrefour.fr/api/cart",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json"
+    },
+    "query": {},
+    "body": {
+      "trackingRequest": {
+        "pageType": {
+          "$param": "pageType"
+        },
+        "pageId": {
+          "$param": "pageId"
+        }
+      },
+      "items": [
+        {
+          "basketServiceId": {
+            "$param": "basketServiceId"
+          },
+          "counter": {
+            "$param": "counter"
+          },
+          "ean": {
+            "$param": "ean"
+          },
+          "subBasketType": {
+            "$param": "subBasketType"
+          }
+        }
+      ]
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1573",
+    "t_002_1590",
+    "t_002_1612",
+    "t_002_1643",
+    "t_002_1669",
+    "t_002_1684",
+    "t_002_1708",
+    "t_002_1733",
+    "t_002_1747",
+    "t_002_1766",
+    "t_002_1793",
+    "t_002_1808",
+    "t_002_1836",
+    "t_002_1863",
+    "t_002_1949",
+    "t_002_1981",
+    "t_002_2001",
+    "t_002_2500",
+    "t_002_2516",
+    "t_002_2854",
+    "t_002_2956",
+    "t_002_3099",
+    "t_002_3278",
+    "t_002_3350",
+    "t_002_3400",
+    "t_002_3436",
+    "t_002_3454",
+    "t_002_3996",
+    "t_002_4051",
+    "t_002_5036",
+    "t_002_5257"
+  ]
+}

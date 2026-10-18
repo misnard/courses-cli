@@ -1,0 +1,41 @@
+{
+  "name": "validate_checkout_summary",
+  "description": "Validates the checkout summary for a specific basket service type (e.g. 'driveclcv' for drive click-and-collect) on Carrefour France. Submits a device fingerprint ID and returns the current cart state, checkout step, store context, workflow steps, warnings, and available checkout links (payment, on-site payment, device fingerprint generator). Useful for initiating or confirming the checkout summary step before proceeding to payment.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "basket_service_type": {
+        "type": "string",
+        "description": "The basket service type for the checkout flow (e.g. 'driveclcv' for drive click-and-collect, 'drive' for standard drive). This is part of the URL path."
+      },
+      "deviceFingerPrintId": {
+        "type": "string",
+        "description": "The device fingerprint ID used for fraud prevention during checkout validation."
+      }
+    },
+    "required": [
+      "basket_service_type",
+      "deviceFingerPrintId"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/checkout/{basket_service_type}/validate/summary",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": {
+      "deviceFingerPrintId": {
+        "$param": "deviceFingerPrintId"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_6013"
+  ]
+}

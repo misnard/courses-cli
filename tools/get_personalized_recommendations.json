@@ -1,0 +1,26 @@
+{
+  "name": "get_personalized_recommendations",
+  "description": "Retrieves personalized product recommendations for the authenticated user on Carrefour France, based on their CDP (Customer Data Platform) profile. Returns a wording block (image, text, title, color) and a list of recommended products tailored to the user's preferences (e.g. organic promotions, personalized deals).",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/recommendation/cdp",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_0769",
+    "t_002_1081",
+    "t_002_1341"
+  ]
+}

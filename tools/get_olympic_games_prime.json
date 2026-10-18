@@ -1,0 +1,25 @@
+{
+  "name": "get_olympic_games_prime",
+  "description": "Retrieves the authenticated user's Olympic Games Prime loyalty account information on Carrefour France. Returns the account balance, whether the user has an associated sports club, the club name, and a link to the Olympic Games Prime website. Useful for displaying the user's Olympic Games loyalty subscription and club association status.",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/loyalty/olympic-games/prime",
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_003_0247",
+    "t_003_0586"
+  ]
+}

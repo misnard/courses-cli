@@ -1,0 +1,26 @@
+{
+  "name": "get_vignettes_products",
+  "description": "Retrieves the authenticated user's vignette products on Carrefour France. Returns a list of products associated with promotional vignettes/stickers collected by the user. Useful for displaying the user's vignette-based promotions or collectible product labels.",
+  "parameters": {
+    "type": "object",
+    "properties": {}
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.carrefour.fr/api/user/products/vignettes-products",
+    "headers": {
+      "x-requested-with": "XMLHttpRequest",
+      "accept": "application/json, text/plain, */*"
+    },
+    "query": {},
+    "body": null,
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_1503",
+    "t_002_2204",
+    "t_003_0756",
+    "t_003_1071"
+  ]
+}

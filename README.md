@@ -12,10 +12,11 @@ A fast, unofficial command-line interface to shop at **Carrefour** (French super
 - **Product Search** - Search the Carrefour catalog with filters (brand, availability)
 - **Cart Management** - Add, remove, update quantities, view cart summary
 - **Time Slots** - View available pickup/delivery slots and select one
-- **Multiple Auth Methods** - Browser cookies or automated via FlareSolverr
+- **One-time Login** - Sign in once in a Chrome window; the session renews itself
+- **43 Endpoints** - Orders, loyalty, receipts, shopping lists... via `carrefour api`
 - **JSON Output** - Machine-readable output for scripting
 - **Shell Completions** - Bash, Zsh, Fish, PowerShell, Elvish
-- **Cloudflare Bypass** - Built-in browser impersonation using [rquest](https://github.com/penumbra-x/rquest)
+- **Cloudflare Bypass** - Requests run inside a headless Chrome
 
 ## Installation
 
@@ -37,40 +38,34 @@ cp target/release/carrefour ~/.local/bin/
 ### Requirements
 
 - Rust 1.70+ (for building)
-- A Carrefour.fr account with a store/pickup point selected
-- Browser cookies OR [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) for authentication
+- Google Chrome or Chromium (set `CARREFOUR_CHROME` if it is not in a standard location)
+- A Carrefour.fr account with a store/pickup point selected (search works without one)
 
 ## Quick Start
 
-### 1. Authentication Setup
-
-The Carrefour API is protected by Cloudflare. You need to provide valid browser cookies.
-
-#### Option A: Using FlareSolverr (Recommended for automation)
+### 1. Log In
 
 ```bash
-# Start FlareSolverr (requires Docker)
-docker run -d -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
-
-# Fetch cookies automatically
-carrefour auth flaresolverr
-
-# Note: This creates an anonymous session. For full functionality,
-# log into carrefour.fr in your browser first, then use Option B.
+carrefour auth login
 ```
 
-#### Option B: Browser Cookies (Full account access)
+A Chrome window opens on the Carrefour login page. Sign in yourself (captcha +
+email code) and **leave the window open**: it closes by itself once the cookies
+are captured. Carrefour's login is gated by a Turnstile captcha, so this step
+cannot be automated.
 
-1. Open https://www.carrefour.fr in your browser
-2. Log in to your account
-3. Select your preferred store/pickup point
-4. Open DevTools (`F12`) > Application > Cookies > www.carrefour.fr
-5. Copy all cookie values as a string: `name1=value1; name2=value2; ...`
-6. Set cookies in the CLI:
+Afterwards the CLI renews the storefront session on its own from the SSO cookie
+(`c4iamsecuretk`): automatically on a 401/403, or with `carrefour auth refresh`.
+The SSO cookie lives 24 h at most and dies after 60 min without activity — run
+`carrefour auth refresh` from cron every 30 min to keep it alive.
 
-```bash
-carrefour auth cookies --cookies "FRONTONE_SESSID=xxx; __cf_bm=xxx; ..."
-```
+Prefer a browser UI? `carrefour auth serve` opens a local page on
+http://127.0.0.1:8765 to sign in, check the session and copy/download/import
+the cookies (bound to localhost, API calls need a custom header so other sites
+cannot drive it).
+
+Already have cookies? `carrefour auth cookies --cookies '<header, JSON map or JSON array>'`
+(only a JSON array export carries the domain needed for the SSO cookie).
 
 ### 2. Verify Authentication
 
@@ -150,6 +145,21 @@ carrefour slots show --format json
 carrefour slots select abc12345-6789-...
 ```
 
+### Any Endpoint
+
+The CLI embeds the 43 endpoint descriptions of
+[CarrefourDriveMCP](https://github.com/maximeallanic/CarrefourDriveMCP) (`tools/*.json`):
+
+```bash
+carrefour api                                   # list (* = needs login)
+carrefour api get_loyalty_order_receipts --describe
+carrefour api get_orders | jq '.'
+carrefour api get_products_by_gtins gtins=3276554163158,3533631469573
+```
+
+`submit_checkout_payment` charges a real payment and requires `--yes`.
+Adding an endpoint = dropping a JSON file in `tools/` and rebuilding.
+
 ### Shell Completions
 
 ```bash
@@ -180,13 +190,12 @@ Config is stored at:
 
 ## Troubleshooting
 
-### 403 Forbidden Errors
+### 401 / "Session expired" Errors
 
-Cloudflare cookies expire frequently. Re-authenticate:
+The SSO session expired (24 h max, 60 min idle). Sign in again:
 
 ```bash
-carrefour auth flaresolverr
-# or get fresh cookies from your browser
+carrefour auth login
 ```
 
 ### "No store selected" Error
@@ -196,7 +205,7 @@ You need to select a store on carrefour.fr before using the CLI:
 1. Go to https://www.carrefour.fr
 2. Click on the store selector (top of page)
 3. Choose a Drive/pickup location
-4. Re-copy cookies to the CLI
+4. Run `carrefour auth refresh`
 
 ### Product Not Found
 
@@ -204,13 +213,21 @@ The CLI uses EAN (barcode) numbers. Make sure you're using the correct EAN from 
 
 ## How It Works
 
-This CLI interacts with the same APIs that the Carrefour website uses. It uses:
+This CLI interacts with the same APIs that the Carrefour website uses.
 
-- **rquest** - An HTTP client with browser TLS fingerprint impersonation to bypass Cloudflare bot detection
-- **Session cookies** - To maintain authentication state
-- The autocomplete API for product search
-- The cart API for basket management
-- The timeslots API for delivery/pickup scheduling
+- **Cloudflare**: plain HTTP clients (curl, reqwest, even TLS-impersonating ones)
+  get `403 cf-mitigated: challenge`. So every request is a `fetch` issued from a
+  page of a headless Chrome (UA masked, `AutomationControlled` disabled), driven
+  over the DevTools protocol.
+- **Login**: the login window is a plain Chrome with nothing attached (Turnstile
+  rejects automated browsers); the CLI polls its tab list and reads the cookies
+  once the OAuth loop lands back on carrefour.fr.
+- **Renewal**: replaying `moncompte.carrefour.fr/iam/oauth2/.../authorize` →
+  `www.carrefour.fr/login/check` mints fresh storefront cookies from the SSO cookie.
+- Cookies are kept in `cookies.json` (mode 0600) next to `config.json`.
+
+Auth flow and endpoint specs come from
+[CarrefourDriveMCP](https://github.com/maximeallanic/CarrefourDriveMCP) (MIT).
 
 ## Contributing
 

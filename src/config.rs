@@ -5,12 +5,6 @@ use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
-    /// FRONTONE_SESSID cookie value from browser session
-    pub session_id: Option<String>,
-    /// Full cookie string (for Cloudflare bypass)
-    pub cookies: Option<String>,
-    /// User agent to use (from FlareSolverr)
-    pub user_agent: Option<String>,
     pub store_id: Option<String>,
 }
 
@@ -25,20 +19,16 @@ impl Config {
             Ok(Config::default())
         }
     }
+}
 
-    pub fn save(&self) -> Result<()> {
-        let path = config_path()?;
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let content = serde_json::to_string_pretty(self)?;
-        fs::write(&path, content).with_context(|| format!("Failed to write config to {:?}", path))
-    }
+/// Holds config.json, the cookie jar and the headless Chrome profile.
+pub fn config_dir() -> Result<PathBuf> {
+    let config_dir = dirs::config_dir().context("Could not find config directory")?;
+    Ok(config_dir.join("carrefour-cli"))
 }
 
 fn config_path() -> Result<PathBuf> {
-    let config_dir = dirs::config_dir().context("Could not find config directory")?;
-    Ok(config_dir.join("carrefour-cli").join("config.json"))
+    Ok(config_dir()?.join("config.json"))
 }
 
 pub fn show_config() -> Result<()> {
@@ -48,27 +38,13 @@ pub fn show_config() -> Result<()> {
     println!("Config file: {:?}", path);
     println!();
 
-    if let Some(cookies) = &config.cookies {
-        let masked = if cookies.len() > 30 {
-            format!("{}...({} chars)", &cookies[..20], cookies.len())
-        } else {
-            "[set]".to_string()
-        };
-        println!("Cookies: {}", masked);
-    } else if let Some(session_id) = &config.session_id {
-        let masked = if session_id.len() > 10 {
-            format!(
-                "{}...{}",
-                &session_id[..5],
-                &session_id[session_id.len() - 5..]
-            )
-        } else {
-            "[set]".to_string()
-        };
-        println!("Session ID (FRONTONE_SESSID): {}", masked);
-    } else {
-        println!("Session/Cookies: not set");
-    }
+    let jar = crate::session::load_jar()?;
+    println!(
+        "Cookies: {:?} ({} cookies, SSO: {})",
+        crate::session::jar_path()?,
+        jar.len(),
+        if crate::session::has_sso(&jar) { "yes" } else { "no" }
+    );
 
     if let Some(store_id) = &config.store_id {
         println!("Store ID: {}", store_id);

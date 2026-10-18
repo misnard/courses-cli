@@ -1,0 +1,52 @@
+{
+  "name": "apply_promo_code_to_cart",
+  "description": "Applies a promotional/discount code to the authenticated user's cart on Carrefour France. Associates the promo code with a specific facility/store service and sub-basket type (e.g. drive click-and-collect). Returns a success confirmation or an error if the code is invalid or cannot be applied.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "The promotional/discount code to apply to the cart (e.g. 'ETE10')."
+      },
+      "facilityServiceId": {
+        "type": "string",
+        "description": "The facility/store service ID to associate the promo code with (e.g. '0678-150-7052')."
+      },
+      "subBasketType": {
+        "type": "string",
+        "description": "The sub-basket type for the cart (e.g. 'drive_clcv' for drive click-and-collect)."
+      }
+    },
+    "required": [
+      "code",
+      "facilityServiceId",
+      "subBasketType"
+    ]
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://www.carrefour.fr/api/cart/promo_code",
+    "headers": {
+      "content-type": "application/json",
+      "accept": "application/json, text/plain, */*",
+      "x-requested-with": "XMLHttpRequest"
+    },
+    "query": {},
+    "body": {
+      "code": {
+        "$param": "code"
+      },
+      "facilityServiceId": {
+        "$param": "facilityServiceId"
+      },
+      "subBasketType": {
+        "$param": "subBasketType"
+      }
+    },
+    "content_type": "application/json"
+  },
+  "requires_auth": true,
+  "example_traces": [
+    "t_002_5671"
+  ]
+}
