@@ -17,7 +17,7 @@ pay on the site.
 | --- | --- | --- | --- | --- | --- | --- |
 | Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
 | E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
-| Chronodrive | `chronodrive` | | | | | in progress |
+| Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan | `auchan` | | | | | in progress |
 | Super U | `superu` | | | | | in progress |
@@ -127,6 +127,20 @@ session, so you can book the slot and pay on leclercdrive.fr. The same window
 clears a DataDome captcha if one ever blocks the CLI.
 
 Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
+
+### Chronodrive
+
+```bash
+courses --provider chronodrive store 59000              # nearest drives (postal code or city)
+courses --provider chronodrive store 59000 --pick 1048
+courses --provider chronodrive search lait -l 5
+courses --provider chronodrive cart add 441443 -q 2
+```
+
+The cart is anonymous and tied to the picked drive: picking another drive
+starts a new one. The CLI does not use a Chronodrive account (`auth login` only
+clears a bot check). Endpoints partly from
+[chronodrive-mcp](https://github.com/ncleton/chronodrive-mcp) (MIT).
 
 ### Casino proximité
 

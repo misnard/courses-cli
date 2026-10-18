@@ -178,7 +178,7 @@ fn nearest(sites: &Value, here: (f64, f64)) -> Vec<Store> {
             let store = Store {
                 id: str_of(&s["id"])?,
                 // The location's city repeats the name, so it is left out.
-                name: s["name"].as_str().unwrap_or("").into(),
+                name: s["name"].as_str().unwrap_or("").trim().into(),
                 info: format!("{}, {d:.1} km", loc["zipCode"].as_str().unwrap_or("")),
                 data: Value::Null,
             };
