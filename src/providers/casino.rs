@@ -11,7 +11,12 @@
 //! - search: GET `/recherche/{store code}?produit_recherche=`;
 //! - cart: the cart panel of the store page (`ligne-panier` blocks);
 //! - writes: POST `/commande/ajouter-panier` {idProduit, qte}, `qte` being the
-//!   target (0 removes); it answers `{success, html}`, html the new cart panel.
+//!   target (0 removes); it answers `{success, html}`, html the new cart panel,
+//!   or an HTTP 500 for an unknown id;
+//! - next pickup slot: the store page's header ("Retrait en magasin", the same
+//!   data `/modale/creneaux` lists in full);
+//! - checkout: `/cde/{store code}/1`, where the cart panel's "Valider mon
+//!   panier" leads.
 //!
 //! The anonymous cart lives in the COOKIECDE / COOKIECDEMAG cookies (90 days),
 //! so `Web`'s cookie jar keeps it across runs.
@@ -69,15 +74,18 @@ impl Shop for Casino {
         let p = page(&store(Provider::Casino)?);
         let html = self.get(&p, &p)?;
         let total = html.find("Total commande").and_then(|i| html[i..].split('<').next()).and_then(parse_euros);
-        Ok(Cart { lines: lines(&html), total, note: None })
+        Ok(Cart { lines: lines(&html), total, note: next_pickup(&html) })
     }
 
     fn set_quantity(&mut self, id: &str, quantity: u32) -> Result<u32> {
         let p = page(&store(Provider::Casino)?);
         let qte = quantity.to_string();
         let form = [("idProduit", id), ("qte", qte.as_str()), ("reloadCommande", "false"), ("famille", ""), ("sousfamille", "")];
-        // An unknown id gets an HTTP 500, which `post` turns into an error.
-        let r = self.post(&p, "/commande/ajouter-panier", &form)?;
+        let r = match self.post(&p, "/commande/ajouter-panier", &form) {
+            // The site's only answer to an unknown id.
+            Err(e) if e.to_string().starts_with("HTTP 500 ") => bail!("Unknown Casino product id {id}: use an ID that search prints."),
+            r => r?,
+        };
         if r["success"] != true {
             bail!("Casino refused to change product {id}.");
         }
@@ -92,6 +100,11 @@ impl Shop for Casino {
         let Some(loc) = places[0]["id"].as_str() else { return Ok(vec![]) };
         let r = self.post(&home, "/resultat-localisation", &[("loc", loc), ("slug", ""), ("ajax", "true")])?;
         Ok(stores(r["html"].as_str().unwrap_or("")))
+    }
+
+    fn checkout(&mut self) -> Result<()> {
+        let s = store(Provider::Casino)?;
+        self.web.show(&format!("{SITE}/cde/{}/1", s.id), "Book a slot and pay")
     }
 
     fn login(&mut self) -> Result<()> {
@@ -149,6 +162,12 @@ fn lines(html: &str) -> Vec<CartLine> {
             })
         })
         .collect()
+}
+
+/// The header's pickup button: "Retrait en magasin <br> <span>19/10/2026 à 8h</span>".
+fn next_pickup(html: &str) -> Option<String> {
+    let slot = between(html, "Retrait en magasin <br", "</span>")?.rsplit('>').next()?.trim();
+    (!slot.is_empty()).then(|| format!("Next pickup: {}", unescape(slot)))
 }
 
 /// Stores of a `/resultat-localisation` answer, nearest first (the site ranks
@@ -223,6 +242,11 @@ mod tests {
               <p class="m-0  montserratsemibold fontSize15-15  text-nowrap"> 7.98 € </p></div>
             <div class="container-btn-ajouter-au-panier" data-qte="2" data-produit="10604230"><button data-qte="3"></button></div>
             </div></div><div class="total-panier"><b> Total commande : 7,98 € </b></div>"#;
+        let header = r#"<span class="text">Retrait en magasin <br class="d-none d-lg-flex">
+            <span class="montserratlight fontSize12-12">19/10/2026 à 8h</span></span>
+            <span class="text text-center montserratsemibold fontSize15-12">Retrait en magasin</span>"#;
+        assert_eq!(next_pickup(header).as_deref(), Some("Next pickup: 19/10/2026 à 8h"));
+        assert_eq!(next_pickup(cart), None);
         let l = lines(cart);
         assert_eq!(l.len(), 1);
         assert_eq!((l[0].product.id.as_str(), l[0].product.name.as_str(), l[0].quantity, l[0].total), ("10604230", "Régilait Lait En Poudre 300g", 2, Some(7.98)));
