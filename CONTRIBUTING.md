@@ -1,6 +1,6 @@
-# Contributing to Carrefour CLI
+# Contributing to Courses CLI
 
-Thank you for your interest in contributing to Carrefour CLI! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Courses CLI! This document provides guidelines and information for contributors.
 
 ## Code of Conduct
 
@@ -42,7 +42,7 @@ Be respectful and constructive. We're all here to build something useful togethe
 ```bash
 # Clone your fork
 git clone https://github.com/misnard/rs-carrefour-cli.git
-cd carrefour-cli
+cd rs-carrefour-cli
 
 # Build
 cargo build
@@ -58,18 +58,25 @@ cargo run -- search "test"
 
 ```
 src/
-├── main.rs          # CLI entry point and argument parsing
-├── client.rs        # HTTP client and API calls
-├── config.rs        # Configuration management
-├── error.rs         # Custom error types
-├── models/
-│   └── mod.rs       # Data models for API responses
-└── commands/
-    ├── mod.rs       # Command module exports
-    ├── auth.rs      # Authentication commands
-    ├── cart.rs      # Cart management commands
-    ├── search.rs    # Product search
-    └── slots.rs     # Time slot management
+├── main.rs            # CLI entry point and argument parsing
+├── browser.rs         # Headless Chrome driven over CDP: every request is an in-page fetch
+├── config.rs          # config.json (picked stores) and the config directory
+├── providers/
+│   ├── mod.rs         # Shop trait, normalized Product/Cart/Store, Web helper
+│   ├── carrefour.rs   # Carrefour adapter over client.rs
+│   ├── leclerc.rs     # E.Leclerc Drive
+│   └── ...            # one file per store chain
+├── commands/
+│   ├── shop.rs        # search / cart / store / auth, shared by every provider
+│   ├── auth.rs        # Carrefour authentication
+│   ├── api.rs         # Carrefour's 43 endpoints from tools/*.json
+│   ├── serve.rs       # Carrefour local login page
+│   └── slots.rs       # Carrefour time slots
+├── client.rs          # Carrefour API client
+├── session.rs         # Carrefour cookie jar, SSO renewal and login
+├── spec.rs            # tools/*.json spec → request
+├── models/mod.rs      # Carrefour response models
+└── error.rs           # Carrefour errors
 ```
 
 ## Coding Guidelines
@@ -81,14 +88,19 @@ src/
 - Keep changes focused and atomic
 - Add comments for complex logic
 
-## API Changes
+## Adding a Provider
 
-If you discover new Carrefour API endpoints or changes:
-
-1. Document the endpoint (URL, method, headers, body)
-2. Test thoroughly before submitting
-3. Note any authentication requirements
-4. Be careful not to include personal data in examples
+1. Implement `Shop` in `src/providers/<name>.rs` and register it in
+   `src/providers/mod.rs` (`Provider` enum, `name()`, `open()`). Implement only
+   what the site allows; the trait's defaults answer "not supported".
+2. Use `Web` (`providers/mod.rs`): it gives the provider its own Chrome profile
+   and cookie jar, and sends each request from a real page of the site, which
+   bot protections such as DataDome require.
+3. Document the endpoints (URL, method, headers, body) in the module comment,
+   and credit the project you took them from.
+4. Add a unit test that parses a small captured sample (no network), and
+   test live with the CLI before submitting.
+5. Be careful not to include personal data in examples.
 
 ## Security
 

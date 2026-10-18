@@ -1,53 +1,79 @@
-# Carrefour CLI
+# Courses CLI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://www.rust-lang.org/)
 
-A fast, unofficial command-line interface to shop at **Carrefour** and **E.Leclerc Drive** (French supermarkets) directly from your terminal. Search products, manage your cart, and select pickup/delivery slots without leaving the command line.
+Do your grocery shopping ("faire les courses") at French drives from the
+terminal: find a store, search products, fill the cart, then book the slot and
+pay on the site.
 
-> **Disclaimer**: This is an unofficial tool. It is not affiliated with, endorsed by, or connected to Carrefour in any way. Use at your own risk. The tool relies on reverse-engineered APIs that may change without notice.
+> **Disclaimer**: This is an unofficial tool, not affiliated with, endorsed by,
+> or connected to any of the retailers below. Use at your own risk. It relies on
+> reverse-engineered APIs that may change without notice.
 
-## Features
+## Providers
 
-- **Product Search** - Search the Carrefour catalog with filters (brand, availability)
-- **Cart Management** - Add, remove, update quantities, view cart summary
-- **Time Slots** - View available pickup/delivery slots and select one
-- **One-time Login** - Sign in once in a Chrome window; the session renews itself
-- **43 Endpoints** - Orders, loyalty, receipts, shopping lists... via `carrefour api`
-- **E.Leclerc Drive** - Store finder, search and cart with `--provider leclerc`
-- **JSON Output** - Machine-readable output for scripting
-- **Shell Completions** - Bash, Zsh, Fish, PowerShell, Elvish
-- **Cloudflare Bypass** - Requests run inside a headless Chrome
+| Provider | `--provider` | Store finder | Search | Cart | Login | Extras |
+| --- | --- | --- | --- | --- | --- | --- |
+| Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
+| E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
+| Chronodrive | `chronodrive` | | | | | in progress |
+| Intermarché | `intermarche` | | | | | in progress |
+| Auchan | `auchan` | | | | | in progress |
+| Super U | `superu` | | | | | in progress |
+| Casino proximité | `casino` | | | | | in progress |
+
+Pick the provider per command (`courses --provider leclerc search lait`) or once
+for the shell (`export COURSES_PROVIDER=leclerc`).
 
 ## Installation
 
-### From Source
-
 ```bash
-# Clone the repository
 git clone https://github.com/misnard/rs-carrefour-cli.git
-cd carrefour-cli
-
-# Build in release mode
+cd rs-carrefour-cli
 cargo build --release
-
-# The binary will be at ./target/release/carrefour
-# Optionally, copy it to your PATH
-cp target/release/carrefour ~/.local/bin/
+cp target/release/courses ~/.local/bin/
 ```
 
-### Requirements
+Requirements:
 
-- Rust 1.70+ (for building)
-- Google Chrome or Chromium (set `CARREFOUR_CHROME` if it is not in a standard location)
-- A Carrefour.fr account with a store/pickup point selected (search works without one)
+- Rust 1.82+ (for building)
+- Google Chrome or Chromium (set `COURSES_CHROME` if it is not in a standard location)
 
 ## Quick Start
 
-### 1. Log In
+```bash
+courses --provider leclerc store 44000                 # stores near a postal code or city
+courses --provider leclerc store 44000 --pick 053701   # shop there (remembered)
+courses --provider leclerc search "lait" --limit 5     # names, prices, stock, IDs
+courses --provider leclerc cart add 2612 --quantity 2  # product ID from search
+courses --provider leclerc cart show
+```
+
+## Usage
+
+These commands work the same for every provider:
 
 ```bash
-carrefour auth login
+courses search "yogurt" --brand Danone --available --limit 5
+courses search "coffee" --format json      # normalized JSON for scripting
+courses cart show [--format json]
+courses cart add <ID> [--quantity 3]       # sets the quantity: not a delta
+courses cart update <ID> --quantity 5
+courses cart remove <ID>
+courses cart clear
+courses store [<postal code or city> [--pick <id>]]
+courses auth login | status | logout
+courses config
+```
+
+`cart add` fails when the cart does not end up holding the requested quantity
+(unknown ID, not enough stock).
+
+### Carrefour
+
+```bash
+courses auth login
 ```
 
 A Chrome window opens on the Carrefour login page. Sign in yourself (captcha +
@@ -56,106 +82,36 @@ are captured. Carrefour's login is gated by a Turnstile captcha, so this step
 cannot be automated.
 
 Afterwards the CLI renews the storefront session on its own from the SSO cookie
-(`c4iamsecuretk`): automatically on a 401/403, or with `carrefour auth refresh`.
-The SSO cookie lives 24 h at most and dies after 60 min without activity — run
-`carrefour auth refresh` from cron every 30 min to keep it alive.
+(`c4iamsecuretk`): automatically on a 401/403, or with `courses auth refresh`.
+The SSO cookie lives 24 h at most and dies after 60 min without activity: run
+`courses auth refresh` from cron every 30 min to keep it alive.
 
-Prefer a browser UI? `carrefour auth serve` opens a local page on
+Pick your store on carrefour.fr (store selector at the top of the page), then
+run `courses auth refresh`. Product IDs are EANs.
+
+Prefer a browser UI? `courses auth serve` opens a local page on
 http://127.0.0.1:8765 to sign in, check the session and copy/download/import
 the cookies (bound to localhost, API calls need a custom header so other sites
-cannot drive it).
+cannot drive it). Already have cookies?
+`courses auth cookies --cookies '<header, JSON map or JSON array>'` (only a JSON
+array export carries the domain needed for the SSO cookie; `CARREFOUR_COOKIES`
+does the same from the environment).
 
-Already have cookies? `carrefour auth cookies --cookies '<header, JSON map or JSON array>'`
-(only a JSON array export carries the domain needed for the SSO cookie).
-
-### 2. Verify Authentication
-
-```bash
-carrefour auth status
-```
-
-### 3. Start Shopping!
+Time slots:
 
 ```bash
-# Search for products
-carrefour search "milk"
-
-# Add to cart (use EAN from search results)
-carrefour cart add 3560070837984
-
-# View your cart
-carrefour cart show
-
-# Check available pickup slots
-carrefour slots show
-
-# Select a slot
-carrefour slots select <SLOT_REF>
+courses slots show
+courses slots select <SLOT_REF>
 ```
 
-## Usage
-
-### Search Products
-
-```bash
-# Basic search
-carrefour search "pasta"
-
-# Limit results
-carrefour search "cheese" --limit 5
-
-# Filter by brand
-carrefour search "yogurt" --brand Danone
-
-# Only show available products
-carrefour search "bread" --available
-
-# JSON output (for scripting)
-carrefour search "coffee" --format json
-```
-
-### Cart Management
-
-```bash
-# View cart
-carrefour cart show
-carrefour cart show --format json
-
-# Add product by EAN (barcode)
-carrefour cart add 3560070837984
-carrefour cart add 3560070837984 --quantity 3
-
-# Update quantity
-carrefour cart update 3560070837984 --quantity 5
-
-# Remove product
-carrefour cart remove 3560070837984
-
-# Clear entire cart
-carrefour cart clear
-```
-
-### Time Slots
-
-```bash
-# View available slots
-carrefour slots show
-carrefour slots show --format json
-
-# Select a slot (use ref from slots show)
-carrefour slots select abc12345-6789-...
-```
-
-### Any Endpoint
-
-The CLI embeds the 43 endpoint descriptions of
+Any of the 43 endpoints of
 [CarrefourDriveMCP](https://github.com/maximeallanic/CarrefourDriveMCP) (`tools/*.json`):
 
 ```bash
-carrefour api                                   # list (* = needs login)
-carrefour api get_loyalty_order_receipts --describe
-carrefour api get_orders | jq '.'
-carrefour api get_products_by_gtins gtins=3276554163158,3533631469573
+courses api                                   # list (* = needs login)
+courses api get_loyalty_order_receipts --describe
+courses api get_orders | jq '.'
+courses api get_products_by_gtins gtins=3276554163158,3533631469573
 ```
 
 `submit_checkout_payment` charges a real payment and requires `--yes`.
@@ -163,112 +119,75 @@ Adding an endpoint = dropping a JSON file in `tools/` and rebuilding.
 
 ### E.Leclerc Drive
 
-Add `--provider leclerc` to any command, or set it once with
-`export CARREFOUR_PROVIDER=leclerc`.
-
-```bash
-carrefour --provider leclerc store 44000                 # drives near a postal code or city
-carrefour --provider leclerc store 44000 --pick 053701   # shop there (remembered)
-carrefour --provider leclerc search "lait" --limit 5     # IDs, prices, stock
-carrefour --provider leclerc cart add 2612 --quantity 2  # product ID from search
-carrefour --provider leclerc cart show
-carrefour --provider leclerc auth login                  # optional, see below
-```
-
 Search and cart work without an account: the cart then belongs to the CLI's own
-anonymous session. `auth login` opens a Chrome window on your drive: sign in
-there and press Enter, and the CLI keeps that signed-in session, so you can book
-the slot and pay on leclercdrive.fr. The same window clears a DataDome captcha
-if one ever blocks the CLI. Slots and `api` are Carrefour-only.
+anonymous session. `courses --provider leclerc auth login` opens a Chrome window
+on your drive: sign in there and press Enter, and the CLI keeps that signed-in
+session, so you can book the slot and pay on leclercdrive.fr. The same window
+clears a DataDome captcha if one ever blocks the CLI.
 
 Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
 
 ### Shell Completions
 
 ```bash
-# Bash
-carrefour completions bash > ~/.local/share/bash-completion/completions/carrefour
-
-# Zsh
-carrefour completions zsh > ~/.zfunc/_carrefour
-
-# Fish
-carrefour completions fish > ~/.config/fish/completions/carrefour.fish
-
-# PowerShell
-carrefour completions powershell >> $PROFILE
+courses completions bash > ~/.local/share/bash-completion/completions/courses
+courses completions zsh > ~/.zfunc/_courses
+courses completions fish > ~/.config/fish/completions/courses.fish
+courses completions powershell >> $PROFILE
 ```
 
 ### Configuration
 
-```bash
-# Show current config
-carrefour config
-```
+Picked stores live in `config.json`; each provider keeps its own cookie jar
+(`<provider>-cookies.json`, mode 0600) and Chrome profile (`<provider>-profile`)
+next to it:
 
-Config is stored at:
-- Linux: `~/.config/carrefour-cli/config.json`
-- macOS: `~/Library/Application Support/carrefour-cli/config.json`
-- Windows: `%APPDATA%\carrefour-cli\config.json`
+- Linux: `~/.config/courses-cli/`
+- macOS: `~/Library/Application Support/courses-cli/`
+
+A `carrefour-cli` directory from older versions is moved there on first run.
 
 ## Troubleshooting
 
-### 401 / "Session expired" Errors
-
-The SSO session expired (24 h max, 60 min idle). Sign in again:
-
-```bash
-carrefour auth login
-```
-
-### "No store selected" Error
-
-You need to select a store on carrefour.fr before using the CLI:
-
-1. Go to https://www.carrefour.fr
-2. Click on the store selector (top of page)
-3. Choose a Drive/pickup location
-4. Run `carrefour auth refresh`
-
-### Product Not Found
-
-The CLI uses EAN (barcode) numbers. Make sure you're using the correct EAN from search results, not a product URL or name.
+- **401 / "Session expired"** (Carrefour): the SSO session expired (24 h max,
+  60 min idle). Run `courses auth login` again.
+- **"Blocked by the site's bot protection"**: run
+  `courses --provider <name> auth login` and solve the captcha in the window.
+- **"No store picked"**: run `courses --provider <name> store <postal code>`.
+- **"Chrome did not start"**: another `courses` command is running for the same
+  provider (each provider's Chrome profile is single-instance).
 
 ## How It Works
 
-This CLI interacts with the same APIs that the Carrefour website uses.
+- **Bot protections**: plain HTTP clients (curl, reqwest, even TLS-impersonating
+  ones) get `403 cf-mitigated: challenge` from Cloudflare (Carrefour) and a
+  captcha from DataDome (Leclerc). So every request is a `fetch` issued from a
+  page of a headless Chrome (UA masked with `--user-agent`,
+  `AutomationControlled` disabled), driven over the DevTools protocol. Masking
+  the UA through CDP instead leaves the client-hint brands empty, and DataDome
+  answers that with a captcha.
+- **Providers**: each one implements the `Shop` trait (`src/providers/`); the
+  shared commands (`src/commands/shop.rs`) print what it returns.
+- **Carrefour login**: the login window is a plain Chrome with nothing attached
+  (Turnstile rejects automated browsers); the CLI polls its tab list and reads
+  the cookies once the OAuth loop lands back on carrefour.fr. Replaying
+  `moncompte.carrefour.fr/iam/oauth2/.../authorize` → `www.carrefour.fr/login/check`
+  then mints fresh storefront cookies from the SSO cookie.
 
-- **Cloudflare / DataDome**: plain HTTP clients (curl, reqwest, even TLS-impersonating ones)
-  get `403 cf-mitigated: challenge` from Carrefour and a captcha from Leclerc. So
-  every request is a `fetch` issued from a page of a headless Chrome (UA masked
-  with `--user-agent`, `AutomationControlled` disabled), driven over the
-  DevTools protocol. Masking the UA through CDP instead leaves the client-hint
-  brands empty, and DataDome answers that with a captcha.
-- **Login**: the login window is a plain Chrome with nothing attached (Turnstile
-  rejects automated browsers); the CLI polls its tab list and reads the cookies
-  once the OAuth loop lands back on carrefour.fr.
-- **Renewal**: replaying `moncompte.carrefour.fr/iam/oauth2/.../authorize` →
-  `www.carrefour.fr/login/check` mints fresh storefront cookies from the SSO cookie.
-- Cookies are kept in `cookies.json` (mode 0600) next to `config.json`.
-
-Auth flow and endpoint specs come from
+Carrefour auth flow and endpoint specs come from
 [CarrefourDriveMCP](https://github.com/maximeallanic/CarrefourDriveMCP) (MIT).
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Legal Notice
 
-This project is for educational purposes. It is not affiliated with Carrefour. The Carrefour name and logo are trademarks of Carrefour S.A.
-
-By using this tool, you agree to Carrefour's Terms of Service. The maintainers are not responsible for any misuse or for any consequences arising from the use of this tool.
+This project is for educational purposes. Carrefour, E.Leclerc, Chronodrive,
+Intermarché, Auchan, Super U and Casino are trademarks of their respective
+owners. By using this tool, you agree to each retailer's Terms of Service. The
+maintainers are not responsible for any misuse or for any consequences arising
+from the use of this tool.
 
 ## License
 

@@ -58,12 +58,12 @@ impl CarrefourClient {
     }
 
     /// Get user profile information
-    pub async fn get_me(&self) -> Result<UserProfile> {
+    pub fn get_me(&self) -> Result<UserProfile> {
         self.call("GET", &format!("{}/me", BASE_URL), None)
     }
 
     /// Search for products using autocomplete API
-    pub async fn search(&self, query: &str, limit: u32) -> Result<AutocompleteResponse> {
+    pub fn search(&self, query: &str, limit: u32) -> Result<AutocompleteResponse> {
         let url = url::Url::parse_with_params(
             "https://www.carrefour.fr/autocomplete",
             [("q", query), ("maxResults", &limit.to_string()), ("productCard", "true")],
@@ -72,13 +72,13 @@ impl CarrefourClient {
     }
 
     /// Get current cart
-    pub async fn get_cart(&self) -> Result<CartResponse> {
+    pub fn get_cart(&self) -> Result<CartResponse> {
         self.call("GET", &format!("{}/cart", BASE_URL), None)
     }
 
     /// (basketServiceId, subBasketType) of the selected store, required by cart writes.
-    async fn basket(&self) -> Result<(String, String)> {
-        let cart = self.get_cart().await?.cart;
+    fn basket(&self) -> Result<(String, String)> {
+        let cart = self.get_cart()?.cart;
         let id = cart
             .facility_service_id
             .ok_or_else(|| anyhow::anyhow!("No store selected. Please select a store first."))?;
@@ -95,8 +95,8 @@ impl CarrefourClient {
     }
 
     /// Add product to cart by EAN
-    pub async fn add_to_cart(&self, ean: &str, quantity: u32) -> Result<()> {
-        let (basket_service_id, sub_basket_type) = self.basket().await?;
+    pub fn add_to_cart(&self, ean: &str, quantity: u32) -> Result<()> {
+        let (basket_service_id, sub_basket_type) = self.basket()?;
         let body = json!({
             "trackingRequest": { "pageType": "search", "pageId": "search" },
             "items": [{
@@ -110,8 +110,8 @@ impl CarrefourClient {
     }
 
     /// Remove product from cart by EAN
-    pub async fn remove_from_cart(&self, ean: &str) -> Result<()> {
-        let (basket_service_id, sub_basket_type) = self.basket().await?;
+    pub fn remove_from_cart(&self, ean: &str) -> Result<()> {
+        let (basket_service_id, sub_basket_type) = self.basket()?;
         // Remove uses /api/cart/items endpoint with flat body
         let body = json!({
             "trackingRequest": { "pageType": "basket", "pageId": "basket" },
@@ -122,33 +122,17 @@ impl CarrefourClient {
         self.patch_item(&format!("{}/cart/items", BASE_URL), ean, body)
     }
 
-    /// Update product quantity in cart (use counter=0 to remove)
-    pub async fn update_cart_quantity(&self, ean: &str, quantity: u32) -> Result<()> {
-        let (basket_service_id, sub_basket_type) = self.basket().await?;
-        let body = json!({
-            "trackingRequest": { "pageType": "basket", "pageId": "basket" },
-            "items": [{
-                "basketServiceId": basket_service_id,
-                "counter": quantity,
-                "ean": ean,
-                "subBasketType": sub_basket_type
-            }]
-        });
-        // Use ?refresh=true and pageType "basket" for cart modifications
-        self.patch_item(&format!("{}/cart?refresh=true", BASE_URL), ean, body)
-    }
-
     /// Get available timeslots for delivery/pickup
-    pub async fn get_timeslots(&self, facility_service_id: Option<&str>) -> Result<TimeslotsResponse> {
+    pub fn get_timeslots(&self, facility_service_id: Option<&str>) -> Result<TimeslotsResponse> {
         let fsid = match facility_service_id {
             Some(id) => id.to_string(),
-            None => self.basket().await?.0,
+            None => self.basket()?.0,
         };
         self.call("GET", &format!("{}/timeslots?facilityServiceId={}", BASE_URL, fsid), None)
     }
 
     /// Select a timeslot for the cart
-    pub async fn select_slot(&self, slot_ref: &str) -> Result<()> {
+    pub fn select_slot(&self, slot_ref: &str) -> Result<()> {
         let url = format!("{}/cart/slot", BASE_URL);
         self.call::<Value>("PUT", &url, Some(json!({ "slotRef": slot_ref }))).map(|_| ())
     }

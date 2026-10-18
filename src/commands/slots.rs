@@ -2,10 +2,10 @@ use crate::client::CarrefourClient;
 use anyhow::Result;
 use colored::Colorize;
 
-pub async fn show_slots(format: &str) -> Result<()> {
+pub fn show_slots(format: &str) -> Result<()> {
     let client = CarrefourClient::new()?;
 
-    let response = client.get_timeslots(None).await?;
+    let response = client.get_timeslots(None)?;
 
     if format == "json" {
         println!("{}", serde_json::to_string_pretty(&response)?);
@@ -88,18 +88,18 @@ pub async fn show_slots(format: &str) -> Result<()> {
 
     println!(
         "{}",
-        "Use 'carrefour slots select <REF>' to select a slot.".dimmed()
+        "Use 'courses slots select <REF>' to select a slot.".dimmed()
     );
 
     Ok(())
 }
 
-pub async fn select_slot(slot_ref: &str) -> Result<()> {
+pub fn select_slot(slot_ref: &str) -> Result<()> {
     let client = CarrefourClient::new()?;
 
     println!("Selecting slot {}...", slot_ref);
 
-    client.select_slot(slot_ref).await?;
+    client.select_slot(slot_ref)?;
 
     println!("{}", "Slot selected!".green());
 

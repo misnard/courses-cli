@@ -1,6 +1,5 @@
 pub mod api;
 pub mod auth;
-pub mod cart;
-pub mod search;
-pub mod slots;
 pub mod serve;
+pub mod shop;
+pub mod slots;

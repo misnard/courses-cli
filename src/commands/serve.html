@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Carrefour CLI</title>
+<title>Courses CLI · Carrefour</title>
 <style>
   :root {
     --bg: #f5f6f8; --card: #fff; --text: #1a1d23; --muted: #6b7280; --border: #e3e5e9;
@@ -38,8 +38,8 @@
 </head>
 <body>
 <main>
-  <h1>Carrefour CLI</h1>
-  <p class="sub">Session carrefour.fr partagée avec la commande <code>carrefour</code>.</p>
+  <h1>Courses CLI · Carrefour</h1>
+  <p class="sub">Session carrefour.fr partagée avec la commande <code>courses</code>.</p>
 
   <section>
     <h2>Session</h2>
@@ -58,7 +58,7 @@
     <h2>Cookies</h2>
     <div class="row">
       <button id="copy">Copier (JSON)</button>
-      <button id="download">Télécharger cookies.json</button>
+      <button id="download">Télécharger carrefour-cookies.json</button>
     </div>
     <label for="import-input" class="hint" style="display:block;margin-top:16px">Importer : en-tête Cookie, map JSON ou export JSON (tableau).</label>
     <textarea id="import-input" spellcheck="false"></textarea>
@@ -68,7 +68,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const api = async (path, opts = {}) => {
-  const r = await fetch(path, { ...opts, headers: { 'x-carrefour-cli': '1' } });
+  const r = await fetch(path, { ...opts, headers: { 'x-courses-cli': '1' } });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
   return j;
@@ -131,7 +131,7 @@ $('copy').onclick = async () => {
 $('download').onclick = async () => {
   try {
     const blob = new Blob([JSON.stringify(await api('/api/cookies'), null, 2)], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'cookies.json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'carrefour-cookies.json' });
     a.click();
     URL.revokeObjectURL(a.href);
   } catch (e) { say(e.message, 'err'); }

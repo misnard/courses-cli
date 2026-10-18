@@ -1,13 +1,14 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
-    pub store_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub leclerc_store: Option<crate::leclerc::Store>,
+    /// Picked store per provider name.
+    #[serde(default)]
+    pub stores: BTreeMap<String, crate::providers::Store>,
 }
 
 impl Config {
@@ -30,10 +31,18 @@ impl Config {
     }
 }
 
-/// Holds config.json, the cookie jar and the headless Chrome profile.
+/// Holds config.json, and each provider's cookie jar and Chrome profile.
 pub fn config_dir() -> Result<PathBuf> {
-    let config_dir = dirs::config_dir().context("Could not find config directory")?;
-    Ok(config_dir.join("carrefour-cli"))
+    let base = dirs::config_dir().context("Could not find config directory")?;
+    let dir = base.join("courses-cli");
+    // ponytail: one-time move from when the tool was carrefour-cli; drop it in a later release.
+    let old = base.join("carrefour-cli");
+    if !dir.exists() && old.exists() {
+        fs::rename(&old, &dir).with_context(|| format!("Failed to move {:?} to {:?}", old, dir))?;
+        let _ = fs::rename(dir.join("cookies.json"), dir.join("carrefour-cookies.json"));
+        let _ = fs::rename(dir.join("browser-profile"), dir.join("carrefour-profile"));
+    }
+    Ok(dir)
 }
 
 fn config_path() -> Result<PathBuf> {
@@ -42,28 +51,19 @@ fn config_path() -> Result<PathBuf> {
 
 pub fn show_config() -> Result<()> {
     let config = Config::load()?;
-    let path = config_path()?;
-
-    println!("Config file: {:?}", path);
+    println!("Config file: {:?}", config_path()?);
     println!();
 
     let jar = crate::session::load_jar()?;
     println!(
-        "Cookies: {:?} ({} cookies, SSO: {})",
+        "Carrefour cookies: {:?} ({} cookies, SSO: {})",
         crate::session::jar_path()?,
         jar.len(),
         if crate::session::has_sso(&jar) { "yes" } else { "no" }
     );
 
-    if let Some(store_id) = &config.store_id {
-        println!("Store ID: {}", store_id);
-    } else {
-        println!("Store ID: not set");
+    for (provider, s) in &config.stores {
+        println!("{} store: {} ({}) {}", provider, s.name, s.id, s.info);
     }
-
-    if let Some(s) = &config.leclerc_store {
-        println!("Leclerc store: {} ({}, {})", s.name, s.id, s.host);
-    }
-
     Ok(())
 }

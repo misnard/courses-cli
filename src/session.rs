@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 pub const CARREFOUR_ORIGIN: &str = "https://www.carrefour.fr";
 pub const IAM_ORIGIN: &str = "https://moncompte.carrefour.fr";
 pub const SSO_COOKIE: &str = "c4iamsecuretk";
-pub const NEED_LOGIN: &str = "run 'carrefour auth login' to sign in (captcha + OTP)";
+pub const NEED_LOGIN: &str = "run 'courses auth login' to sign in (captcha + OTP)";
 
 // ---------------------------------------------------------------- cookie jar
 // The jar holds CDP `CookieParam` objects. Chrome never writes session cookies
@@ -26,7 +26,7 @@ pub const NEED_LOGIN: &str = "run 'carrefour auth login' to sign in (captcha + O
 // at every launch.
 
 pub fn jar_path() -> Result<PathBuf> {
-    Ok(config_dir()?.join("cookies.json"))
+    Ok(config_dir()?.join("carrefour-cookies.json"))
 }
 
 pub fn read_jar(path: &Path) -> Vec<Value> {
@@ -133,7 +133,7 @@ impl Session {
         Ok(Session {
             sso: has_sso(&jar),
             storefront: storefront_cookies(&jar) > 0,
-            browser: Browser::launch(&config_dir()?.join("browser-profile"), &jar, true)?,
+            browser: Browser::launch(&config_dir()?.join("carrefour-profile"), &jar, true)?,
         })
     }
 
