@@ -1,4 +1,4 @@
-//! `carrefour auth serve`: a local web page to sign in, check the session and
+//! `courses auth serve`: a local web page to sign in, check the session and
 //! export/import the cookies. Bound to 127.0.0.1 only.
 
 use crate::client::CarrefourClient;
@@ -12,12 +12,12 @@ use std::time::Duration;
 const PAGE: &str = include_str!("serve.html");
 
 // ponytail: one request at a time; a login blocks the server until it ends (single user).
-pub async fn serve(port: u16) -> Result<()> {
+pub fn serve(port: u16) -> Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     println!("Open http://127.0.0.1:{}  (Ctrl+C to stop)", port);
     for stream in listener.incoming() {
         let Ok(mut stream) = stream else { continue };
-        if let Err(e) = handle(&mut stream, port).await {
+        if let Err(e) = handle(&mut stream, port) {
             eprintln!("serve: {}", e);
         }
     }
@@ -88,21 +88,21 @@ fn result(r: Result<Value>) -> (u16, Value) {
     }
 }
 
-async fn handle(stream: &mut TcpStream, port: u16) -> Result<()> {
+fn handle(stream: &mut TcpStream, port: u16) -> Result<()> {
     let req = read_req(stream)?;
     // Only answer to our own host name: blocks DNS rebinding.
     let host = req.header("host").unwrap_or("");
     let host_ok = host == format!("127.0.0.1:{}", port) || host == format!("localhost:{}", port);
     // A cross-site page cannot send a custom header without a CORS preflight,
     // which we never approve: blocks CSRF on the API.
-    let api_ok = !req.path.starts_with("/api/") || req.header("x-carrefour-cli") == Some("1");
+    let api_ok = !req.path.starts_with("/api/") || req.header("x-courses-cli") == Some("1");
     if !host_ok || !api_ok {
         return respond(stream, 403, "text/plain", "forbidden");
     }
 
     let (status, body) = match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/") => return respond(stream, 200, "text/html; charset=utf-8", PAGE),
-        ("GET", "/api/status") => result(status().await),
+        ("GET", "/api/status") => result(status()),
         ("POST", "/api/login") => result(session::login().map(|c| json!({ "sso": has_sso(&c) }))),
         ("POST", "/api/refresh") => result(CarrefourClient::new().and_then(|c| c.refresh()).map(|_| json!({}))),
         ("GET", "/api/cookies") => result(load_jar().map(Value::from)),
@@ -113,14 +113,14 @@ async fn handle(stream: &mut TcpStream, port: u16) -> Result<()> {
     respond(stream, status, "application/json", &body.to_string())
 }
 
-async fn status() -> Result<Value> {
+fn status() -> Result<Value> {
     let jar = load_jar()?;
     let mut out = json!({ "cookies": jar.len(), "sso_cookie": has_sso(&jar) });
     if jar.is_empty() {
         return Ok(out);
     }
     let client = CarrefourClient::new()?;
-    if let Ok(p) = client.get_me().await {
+    if let Ok(p) = client.get_me() {
         if p.email.is_some() || p.user_id.is_some() {
             let name = [p.first_name, p.last_name].into_iter().flatten().collect::<Vec<_>>().join(" ");
             out["name"] = json!(name);

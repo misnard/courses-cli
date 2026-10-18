@@ -25,7 +25,7 @@ fn find(name: &str) -> Result<Value> {
     tools()
         .into_iter()
         .find(|t| t["name"] == name)
-        .ok_or_else(|| anyhow!("Unknown endpoint '{}'. Run 'carrefour api' to list them.", name))
+        .ok_or_else(|| anyhow!("Unknown endpoint '{}'. Run 'courses api' to list them.", name))
 }
 
 pub fn list() {
@@ -40,7 +40,7 @@ pub fn list() {
             url.dimmed()
         );
     }
-    println!("\n{}", "* needs login. 'carrefour api <name> --describe' for params.".dimmed());
+    println!("\n{}", "* needs login. 'courses api <name> --describe' for params.".dimmed());
 }
 
 pub fn describe(name: &str) -> Result<()> {
@@ -85,7 +85,7 @@ pub fn call(name: &str, params: &[String], yes: bool) -> Result<()> {
             .ok_or_else(|| anyhow!("Expected param=value, got '{}'", kv))?;
         let p = props
             .get(k)
-            .ok_or_else(|| anyhow!("Unknown param '{}'. See 'carrefour api {} --describe'.", k, name))?;
+            .ok_or_else(|| anyhow!("Unknown param '{}'. See 'courses api {} --describe'.", k, name))?;
         args.insert(k.to_string(), coerce(v, p)?);
     }
     let missing: Vec<&str> = spec["parameters"]["required"]
@@ -96,7 +96,7 @@ pub fn call(name: &str, params: &[String], yes: bool) -> Result<()> {
         .filter(|r| !args.contains_key(*r))
         .collect();
     if !missing.is_empty() {
-        bail!("Missing param(s) {}. See 'carrefour api {} --describe'.", missing.join(", "), name);
+        bail!("Missing param(s) {}. See 'courses api {} --describe'.", missing.join(", "), name);
     }
     if name == "submit_checkout_payment" && !yes {
         bail!("submit_checkout_payment charges a real payment. Re-run with --yes.");

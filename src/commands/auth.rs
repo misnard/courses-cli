@@ -25,7 +25,7 @@ pub fn set_cookies(cookies: &str) -> Result<()> {
 
 pub fn logout() -> Result<()> {
     let _ = std::fs::remove_file(session::jar_path()?);
-    let _ = std::fs::remove_dir_all(config_dir()?.join("browser-profile"));
+    let _ = std::fs::remove_dir_all(config_dir()?.join("carrefour-profile"));
     Ok(())
 }
 
@@ -53,21 +53,21 @@ pub fn refresh() -> Result<()> {
     Ok(())
 }
 
-pub async fn show_status() -> Result<()> {
+pub fn show_status() -> Result<()> {
     let jar = load_jar()?;
     if jar.is_empty() {
         println!("{}", "Not authenticated.".yellow());
-        println!("Run 'carrefour auth login' to sign in.");
+        println!("Run 'courses auth login' to sign in.");
         return Ok(());
     }
 
     println!("Validating session...\n");
 
     let client = CarrefourClient::new()?;
-    match client.get_me().await {
+    match client.get_me() {
         Ok(profile) if profile.email.is_none() && profile.user_id.is_none() => {
             println!("{}", "Anonymous session (not signed in).".yellow());
-            println!("Run 'carrefour auth login' to sign in.");
+            println!("Run 'courses auth login' to sign in.");
         }
         Ok(profile) => {
             println!("{}", "Authenticated".green().bold());

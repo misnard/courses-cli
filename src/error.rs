@@ -3,10 +3,10 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 #[allow(dead_code)]
 pub enum CarrefourError {
-    #[error("Not authenticated. Run 'carrefour auth login' first.")]
+    #[error("Not authenticated. Run 'courses auth login' first.")]
     NotAuthenticated,
 
-    #[error("Session expired or invalid. Run 'carrefour auth login' to sign in again.")]
+    #[error("Session expired or invalid. Run 'courses auth login' to sign in again.")]
     Unauthorized,
 
     #[error("Product not found: {0}")]

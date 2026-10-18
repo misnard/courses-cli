@@ -19,7 +19,7 @@ use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 type Res<T> = anyhow::Result<T>;
 
 pub fn chrome_path() -> Res<PathBuf> {
-    if let Ok(p) = std::env::var("CARREFOUR_CHROME") {
+    if let Ok(p) = std::env::var("COURSES_CHROME") {
         return Ok(p.into());
     }
     let mut candidates: Vec<PathBuf> = [
@@ -36,14 +36,14 @@ pub fn chrome_path() -> Res<PathBuf> {
     candidates
         .into_iter()
         .find(|p| p.is_file())
-        .ok_or_else(|| anyhow!("Chrome not found; set CARREFOUR_CHROME to its executable"))
+        .ok_or_else(|| anyhow!("Chrome not found; set COURSES_CHROME to its executable"))
 }
 
 /// Chrome's own (reduced) UA without "HeadlessChrome". Given as a flag, not a
 /// CDP override: the override leaves the client-hint brands empty or made up,
 /// and DataDome answers that with a captcha.
 fn user_agent(chrome: &Path) -> Res<String> {
-    if let Ok(ua) = std::env::var("CARREFOUR_USER_AGENT") {
+    if let Ok(ua) = std::env::var("COURSES_USER_AGENT") {
         return Ok(ua);
     }
     let out = Command::new(chrome).arg("--version").output().context("cannot run Chrome")?;
@@ -218,7 +218,7 @@ impl Browser {
             }
             if Instant::now() > deadline || child.try_wait().ok().flatten().is_some() {
                 let _ = child.kill();
-                bail!("Chrome did not start (is another carrefour command running?)");
+                bail!("Chrome did not start (is another courses command running for this provider?)");
             }
             std::thread::sleep(Duration::from_millis(100));
         };
