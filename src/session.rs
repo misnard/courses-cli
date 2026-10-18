@@ -12,7 +12,7 @@ use crate::config::config_dir;
 use crate::spec::Request;
 use anyhow::{anyhow, bail, Context, Result};
 use serde_json::{json, Value};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 pub const CARREFOUR_ORIGIN: &str = "https://www.carrefour.fr";
@@ -29,11 +29,12 @@ pub fn jar_path() -> Result<PathBuf> {
     Ok(config_dir()?.join("cookies.json"))
 }
 
+pub fn read_jar(path: &Path) -> Vec<Value> {
+    std::fs::read(path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+}
+
 pub fn load_jar() -> Result<Vec<Value>> {
-    let mut jar: Vec<Value> = std::fs::read(jar_path()?)
-        .ok()
-        .and_then(|b| serde_json::from_slice(&b).ok())
-        .unwrap_or_default();
+    let mut jar = read_jar(&jar_path()?);
     if let Ok(env) = std::env::var("CARREFOUR_COOKIES") {
         merge(&mut jar, parse_cookies(&env));
     }
@@ -41,16 +42,19 @@ pub fn load_jar() -> Result<Vec<Value>> {
 }
 
 pub fn save_jar(jar: &[Value]) -> Result<()> {
+    save_jar_to(&jar_path()?, jar)
+}
+
+pub fn save_jar_to(path: &Path, jar: &[Value]) -> Result<()> {
     use std::io::Write;
     use std::os::unix::fs::OpenOptionsExt;
-    let path = jar_path()?;
     std::fs::create_dir_all(path.parent().unwrap())?;
     let mut f = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
         .mode(0o600)
-        .open(&path)
+        .open(path)
         .with_context(|| format!("Failed to write {:?}", path))?;
     f.write_all(serde_json::to_string_pretty(jar)?.as_bytes())?;
     Ok(())
@@ -129,7 +133,7 @@ impl Session {
         Ok(Session {
             sso: has_sso(&jar),
             storefront: storefront_cookies(&jar) > 0,
-            browser: Browser::launch(&config_dir()?.join("browser-profile"), &jar)?,
+            browser: Browser::launch(&config_dir()?.join("browser-profile"), &jar, true)?,
         })
     }
 
@@ -178,7 +182,7 @@ impl Session {
 impl Drop for Session {
     /// Persist the browser's cookies, renewed ones included.
     fn drop(&mut self) {
-        match self.browser.cookies() {
+        match self.browser.cookies("carrefour.fr") {
             Ok(c) if !c.is_empty() => {
                 if let Err(e) = save_jar(&c) {
                     eprintln!("Warning: could not save cookies: {e}");
@@ -220,7 +224,7 @@ pub fn login() -> Result<Vec<Value>> {
 
     let cookies = if done {
         devtools_get(port, "/json/version")
-            .and_then(|v| Cdp::connect(v["webSocketDebuggerUrl"].as_str().unwrap_or(""))?.cookies())
+            .and_then(|v| Cdp::connect(v["webSocketDebuggerUrl"].as_str().unwrap_or(""))?.cookies("carrefour.fr"))
     } else {
         Err(anyhow!("The login did not complete. Run it again and leave the window open once signed in."))
     };

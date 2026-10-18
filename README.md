@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 
-A fast, unofficial command-line interface to shop at **Carrefour** (French supermarket) directly from your terminal. Search products, manage your cart, and select pickup/delivery slots without leaving the command line.
+A fast, unofficial command-line interface to shop at **Carrefour** and **E.Leclerc Drive** (French supermarkets) directly from your terminal. Search products, manage your cart, and select pickup/delivery slots without leaving the command line.
 
 > **Disclaimer**: This is an unofficial tool. It is not affiliated with, endorsed by, or connected to Carrefour in any way. Use at your own risk. The tool relies on reverse-engineered APIs that may change without notice.
 
@@ -14,6 +14,7 @@ A fast, unofficial command-line interface to shop at **Carrefour** (French super
 - **Time Slots** - View available pickup/delivery slots and select one
 - **One-time Login** - Sign in once in a Chrome window; the session renews itself
 - **43 Endpoints** - Orders, loyalty, receipts, shopping lists... via `carrefour api`
+- **E.Leclerc Drive** - Store finder, search and cart with `--provider leclerc`
 - **JSON Output** - Machine-readable output for scripting
 - **Shell Completions** - Bash, Zsh, Fish, PowerShell, Elvish
 - **Cloudflare Bypass** - Requests run inside a headless Chrome
@@ -160,6 +161,28 @@ carrefour api get_products_by_gtins gtins=3276554163158,3533631469573
 `submit_checkout_payment` charges a real payment and requires `--yes`.
 Adding an endpoint = dropping a JSON file in `tools/` and rebuilding.
 
+### E.Leclerc Drive
+
+Add `--provider leclerc` to any command, or set it once with
+`export CARREFOUR_PROVIDER=leclerc`.
+
+```bash
+carrefour --provider leclerc store 44000                 # drives near a postal code or city
+carrefour --provider leclerc store 44000 --pick 053701   # shop there (remembered)
+carrefour --provider leclerc search "lait" --limit 5     # IDs, prices, stock
+carrefour --provider leclerc cart add 2612 --quantity 2  # product ID from search
+carrefour --provider leclerc cart show
+carrefour --provider leclerc auth login                  # optional, see below
+```
+
+Search and cart work without an account: the cart then belongs to the CLI's own
+anonymous session. `auth login` opens a Chrome window on your drive: sign in
+there and press Enter, and the CLI keeps that signed-in session, so you can book
+the slot and pay on leclercdrive.fr. The same window clears a DataDome captcha
+if one ever blocks the CLI. Slots and `api` are Carrefour-only.
+
+Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
+
 ### Shell Completions
 
 ```bash
@@ -215,10 +238,12 @@ The CLI uses EAN (barcode) numbers. Make sure you're using the correct EAN from 
 
 This CLI interacts with the same APIs that the Carrefour website uses.
 
-- **Cloudflare**: plain HTTP clients (curl, reqwest, even TLS-impersonating ones)
-  get `403 cf-mitigated: challenge`. So every request is a `fetch` issued from a
-  page of a headless Chrome (UA masked, `AutomationControlled` disabled), driven
-  over the DevTools protocol.
+- **Cloudflare / DataDome**: plain HTTP clients (curl, reqwest, even TLS-impersonating ones)
+  get `403 cf-mitigated: challenge` from Carrefour and a captcha from Leclerc. So
+  every request is a `fetch` issued from a page of a headless Chrome (UA masked
+  with `--user-agent`, `AutomationControlled` disabled), driven over the
+  DevTools protocol. Masking the UA through CDP instead leaves the client-hint
+  brands empty, and DataDome answers that with a captcha.
 - **Login**: the login window is a plain Chrome with nothing attached (Turnstile
   rejects automated browsers); the CLI polls its tab list and reads the cookies
   once the OAuth loop lands back on carrefour.fr.

@@ -3,7 +3,7 @@ name = "carrefour-cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["Carrefour CLI Contributors"]
-description = "A command-line interface to shop at Carrefour (French supermarket) from your terminal"
+description = "A command-line interface to shop at Carrefour and E.Leclerc Drive (French supermarkets) from your terminal"
 license = "MIT"
 repository = "https://github.com/misnard/rs-carrefour-cli"
 homepage = "https://github.com/misnard/rs-carrefour-cli"
@@ -15,7 +15,7 @@ exclude = ["*.har", ".claude/", "CONCEPTION.md", "PLAN.md"]
 
 [dependencies]
 # CLI framework
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
 
 # Async runtime
