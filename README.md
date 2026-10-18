@@ -21,7 +21,7 @@ pay on the site.
 | Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan | `auchan` | | | | | in progress |
 | Super U | `superu` | | | | | in progress |
-| Casino proximité | `casino` | | | | | in progress |
+| Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | Petit Casino, Casino Shop, Spar, Vival |
 
 Pick the provider per command (`courses --provider leclerc search lait`) or once
 for the shell (`export COURSES_PROVIDER=leclerc`).
@@ -127,6 +127,19 @@ session, so you can book the slot and pay on leclercdrive.fr. The same window
 clears a DataDome captcha if one ever blocks the CLI.
 
 Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
+
+### Casino proximité
+
+```bash
+courses --provider casino store 75011              # Petit Casino, Casino Shop, Spar, Vival nearby
+courses --provider casino store 75011 --pick TL324
+courses --provider casino search lait
+courses --provider casino cart add 10604230 -q 2
+```
+
+No account needed: the cart lives in the site's cookies for 90 days. Slot,
+order and payment happen on mescoursesdeproximite.com. Endpoints partly from
+[casino-proximite-mcp](https://github.com/ncleton/casino-proximite-mcp) (MIT).
 
 ### Nutri-Score from Open Food Facts
 
