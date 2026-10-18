@@ -170,7 +170,8 @@ courses --provider superu search "lait" -l 5
 ```
 
 The first search binds the session to the picked store (two extra requests).
-Only the first page of results comes back (18 products). No cart: coursesu.com
+Search pages through results up to `-l` (18 per page); out-of-stock products
+are flagged and come last. No cart: coursesu.com
 gives guests a cart only in an A/B test, otherwise it needs an account. Search
 from [cli-drive-u](https://github.com/nmorvil/cli-drive-u) (MIT).
 
