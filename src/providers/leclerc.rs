@@ -7,7 +7,7 @@
 //! HTML with the product records and the cart embedded as JSON objects; every
 //! cart write is one form POST to `panier.aspx?op=1`.
 
-use super::{parse_euros, store, str_of, Cart, CartLine, Product, Provider, Shop, Store, Web};
+use super::{decode_html, parse_euros, store, str_of, Cart, CartLine, Product, Provider, Shop, Store, Web};
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -191,42 +191,8 @@ fn qty(r: &Value) -> u32 {
 
 fn label(r: &Value) -> String {
     let line = |k: &str| r[k].as_str().unwrap_or("").trim().to_string();
-    decode(&format!("{} {}", line("sLibelleLigne1"), line("sLibelleLigne2"))).trim().to_string()
-}
-
-/// Labels carry HTML entities: `Lait demi-&#233;cr&#233;m&#233;`.
-fn decode(s: &str) -> String {
-    let mut out = String::new();
-    let mut rest = s;
-    while let Some(i) = rest.find('&') {
-        out.push_str(&rest[..i]);
-        rest = &rest[i..];
-        let end = rest.find(';').filter(|&e| e <= 10);
-        let ch = end.and_then(|e| match &rest[1..e] {
-            "amp" => Some('&'),
-            "lt" => Some('<'),
-            "gt" => Some('>'),
-            "quot" => Some('"'),
-            "apos" => Some('\''),
-            "nbsp" => Some(' '),
-            n => match n.strip_prefix("#x").or_else(|| n.strip_prefix("#X")) {
-                Some(h) => u32::from_str_radix(h, 16).ok(),
-                None => n.strip_prefix('#').and_then(|d| d.parse().ok()),
-            }
-            .and_then(char::from_u32),
-        });
-        match (ch, end) {
-            (Some(c), Some(e)) => {
-                out.push(c);
-                rest = &rest[e + 1..];
-            }
-            _ => {
-                out.push('&');
-                rest = &rest[1..];
-            }
-        }
-    }
-    out + rest
+    // Labels carry HTML entities: `Lait demi-&#233;cr&#233;m&#233;`.
+    decode_html(&format!("{} {}", line("sLibelleLigne1"), line("sLibelleLigne2"))).trim().to_string()
 }
 
 #[cfg(test)]
@@ -244,6 +210,5 @@ mod tests {
         assert_eq!((p.price, p.available, p.in_cart), (Some(5.94), true, 2));
         let cart = enclosing(html, html.find("\"lstProduitsLight\"").unwrap()).unwrap();
         assert_eq!(cart["sTotalAPayer"], "11,88 €");
-        assert_eq!(decode("a &amp; b &#x41; &bogus c &"), "a & b A &bogus c &");
     }
 }
