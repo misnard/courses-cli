@@ -11,8 +11,7 @@
 //! Product ids are `<productId>:<offerId>`: a cart line needs the drive's
 //! offer, and a line added with the productId alone gets no price.
 
-use super::leclerc::decode;
-use super::{save_store, store, Cart, CartLine, Product, Provider, Shop, Store, Web};
+use super::{decode_html, save_store, store, Cart, CartLine, Product, Provider, Shop, Store, Web};
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
 
@@ -266,7 +265,7 @@ fn after<'a>(s: &'a str, marker: &str) -> Option<&'a str> {
 /// First ` name="..."` attribute in `s`, decoded.
 fn attr(s: &str, name: &str) -> Option<String> {
     let rest = after(s, &format!(" {name}=\""))?;
-    Some(decode(&rest[..rest.find('"')?]))
+    Some(decode_html(&rest[..rest.find('"')?]))
 }
 
 /// Value of the form input `name`.
@@ -288,7 +287,7 @@ fn text(s: &str, marker: &str, end: &str) -> Option<String> {
             _ => {}
         }
     }
-    let t = decode(&plain).split_whitespace().collect::<Vec<_>>().join(" ");
+    let t = decode_html(&plain).split_whitespace().collect::<Vec<_>>().join(" ");
     (!t.is_empty()).then_some(t)
 }
 

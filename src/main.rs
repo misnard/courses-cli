@@ -4,6 +4,7 @@ mod commands;
 mod config;
 mod error;
 mod models;
+mod openfoodfacts;
 mod providers;
 mod session;
 mod spec;
@@ -49,6 +50,9 @@ enum Commands {
         /// Only show available products
         #[arg(short, long)]
         available: bool,
+        /// Fill missing Nutri-Scores from Open Food Facts (by EAN)
+        #[arg(long)]
+        nutriscore: bool,
     },
     /// Manage shopping cart
     Cart {
@@ -204,8 +208,8 @@ fn main() -> Result<()> {
                 println!("Session cleared.");
             }
         },
-        Commands::Search { query, limit, format, brand, available } => {
-            shop::search(p, &query, limit, &format, brand.as_deref(), available)?
+        Commands::Search { query, limit, format, brand, available, nutriscore } => {
+            shop::search(p, &query, limit, &format, brand.as_deref(), available, nutriscore)?
         }
         Commands::Cart { action } => match action {
             CartCommands::Show { format } => shop::show_cart(p, &format)?,

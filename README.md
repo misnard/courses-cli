@@ -17,11 +17,11 @@ pay on the site.
 | --- | --- | --- | --- | --- | --- | --- |
 | Carrefour | `carrefour` (default) | — | ✓ | ✓ | ✓ | slots, 43 endpoints (`api`), self-renewing session |
 | E.Leclerc Drive | `leclerc` | ✓ | ✓ | ✓ | ✓ | |
-| Chronodrive | `chronodrive` | | | | | in progress |
-| Intermarché | `intermarche` | | | | | in progress |
+| Chronodrive | `chronodrive` | ✓ | ✓ | ✓ | — | Nutri-Score, EAN |
+| Intermarché | `intermarche` | | | | | not supported: DataDome blocks headless Chrome |
 | Auchan | `auchan` | | | | | in progress |
-| Super U | `superu` | | | | | in progress |
-| Casino proximité | `casino` | | | | | in progress |
+| Super U | `superu` | ✓ | ✓ | — | ✓ (unverified) | prices per picked store, Nutri-Score, EAN |
+| Casino proximité | `casino` | ✓ | ✓ | ✓ | ✓ (unverified) | Petit Casino, Casino Shop, Spar, Vival |
 
 Pick the provider per command (`courses --provider leclerc search lait`) or once
 for the shell (`export COURSES_PROVIDER=leclerc`).
@@ -57,6 +57,7 @@ These commands work the same for every provider:
 ```bash
 courses search "yogurt" --brand Danone --available --limit 5
 courses search "coffee" --format json      # normalized JSON for scripting
+courses search "nutella" --nutriscore      # fill missing Nutri-Scores from Open Food Facts
 courses cart show [--format json]
 courses cart add <ID> [--quantity 3]       # sets the quantity: not a delta
 courses cart update <ID> --quantity 5
@@ -126,6 +127,55 @@ session, so you can book the slot and pay on leclercdrive.fr. The same window
 clears a DataDome captcha if one ever blocks the CLI.
 
 Endpoints come from [mcp-leclerc-drive](https://github.com/skunkobi/mcp-leclerc-drive) (MIT).
+
+### Chronodrive
+
+```bash
+courses --provider chronodrive store 59000              # nearest drives (postal code or city)
+courses --provider chronodrive store 59000 --pick 1048
+courses --provider chronodrive search lait -l 5
+courses --provider chronodrive cart add 441443 -q 2
+```
+
+The cart is anonymous and tied to the picked drive: picking another drive
+starts a new one. The CLI does not use a Chronodrive account (`auth login` only
+clears a bot check). Endpoints partly from
+[chronodrive-mcp](https://github.com/ncleton/chronodrive-mcp) (MIT).
+
+### Super U
+
+```bash
+courses --provider superu store 35000              # stores near a postal code or town
+courses --provider superu store 35000 --pick 38672
+courses --provider superu search "lait" -l 5
+```
+
+The first search binds the session to the picked store (two extra requests).
+Only the first page of results comes back (18 products). No cart: coursesu.com
+gives guests a cart only in an A/B test, otherwise it needs an account. Search
+from [cli-drive-u](https://github.com/nmorvil/cli-drive-u) (MIT).
+
+### Casino proximité
+
+```bash
+courses --provider casino store 75011              # Petit Casino, Casino Shop, Spar, Vival nearby
+courses --provider casino store 75011 --pick TL324
+courses --provider casino search lait
+courses --provider casino cart add 10604230 -q 2
+```
+
+No account needed: the cart lives in the site's cookies for 90 days. Slot,
+order and payment happen on mescoursesdeproximite.com. Endpoints partly from
+[casino-proximite-mcp](https://github.com/ncleton/casino-proximite-mcp) (MIT).
+
+### Nutri-Score from Open Food Facts
+
+`courses search nutella --nutriscore` fills in the Nutri-Score (A to E) from
+[Open Food Facts](https://world.openfoodfacts.org) for products the store shows
+without one, by EAN, for every provider that returns EANs. It makes one batched
+anonymous request, plus one per product missing from OFF's search index, and
+only when something needs filling; without the flag, Open Food Facts is never
+contacted. Data © Open Food Facts contributors, ODbL.
 
 ### Shell Completions
 

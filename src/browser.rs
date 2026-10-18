@@ -330,6 +330,14 @@ impl Browser {
         })
     }
 
+    /// Evaluate `expr` in the page parked on `page` (as `fetch_from` parks it),
+    /// e.g. to read a config the site's own scripts set.
+    pub fn eval_in(&mut self, page: &str, expr: &str) -> Res<Value> {
+        let origin = url::Url::parse(page)?.origin().ascii_serialization();
+        let sid = self.page_for(&origin, page)?;
+        self.eval(&sid, expr)
+    }
+
     pub fn cookies(&mut self, domain: &str) -> Res<Vec<Value>> {
         self.cdp.cookies(domain)
     }

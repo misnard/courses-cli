@@ -252,6 +252,65 @@ pub fn parse_euros(s: &str) -> Option<f64> {
     n.replace(',', ".").parse().ok()
 }
 
+/// HTML 4 names of U+00A0..=U+00FF, in code point order.
+const LATIN1: [&str; 96] = [
+    "nbsp", "iexcl", "cent", "pound", "curren", "yen", "brvbar", "sect", "uml", "copy", "ordf", "laquo", "not", "shy",
+    "reg", "macr", "deg", "plusmn", "sup2", "sup3", "acute", "micro", "para", "middot", "cedil", "sup1", "ordm",
+    "raquo", "frac14", "frac12", "frac34", "iquest", "Agrave", "Aacute", "Acirc", "Atilde", "Auml", "Aring", "AElig",
+    "Ccedil", "Egrave", "Eacute", "Ecirc", "Euml", "Igrave", "Iacute", "Icirc", "Iuml", "ETH", "Ntilde", "Ograve",
+    "Oacute", "Ocirc", "Otilde", "Ouml", "times", "Oslash", "Ugrave", "Uacute", "Ucirc", "Uuml", "Yacute", "THORN",
+    "szlig", "agrave", "aacute", "acirc", "atilde", "auml", "aring", "aelig", "ccedil", "egrave", "eacute", "ecirc",
+    "euml", "igrave", "iacute", "icirc", "iuml", "eth", "ntilde", "ograve", "oacute", "ocirc", "otilde", "ouml",
+    "divide", "oslash", "ugrave", "uacute", "ucirc", "uuml", "yacute", "thorn", "yuml",
+];
+
+/// Decode HTML entities: numeric, Latin-1 (`&eacute;`) and the usual few.
+/// Unknown ones are kept as they are.
+pub fn decode_html(s: &str) -> String {
+    let mut out = String::new();
+    let mut rest = s;
+    while let Some(i) = rest.find('&') {
+        out.push_str(&rest[..i]);
+        rest = &rest[i..];
+        let end = rest.find(';').filter(|&e| e <= 10);
+        let ch = end.and_then(|e| match &rest[1..e] {
+            "amp" => Some('&'),
+            "lt" => Some('<'),
+            "gt" => Some('>'),
+            "quot" => Some('"'),
+            "apos" => Some('\''),
+            "nbsp" => Some(' '),
+            "euro" => Some('€'),
+            "oelig" => Some('œ'),
+            "OElig" => Some('Œ'),
+            "lsquo" => Some('‘'),
+            "rsquo" => Some('’'),
+            "ldquo" => Some('“'),
+            "rdquo" => Some('”'),
+            "ndash" => Some('–'),
+            "mdash" => Some('—'),
+            "hellip" => Some('…'),
+            n => match n.strip_prefix("#x").or_else(|| n.strip_prefix("#X")) {
+                Some(h) => u32::from_str_radix(h, 16).ok(),
+                None => n.strip_prefix('#').and_then(|d| d.parse().ok()),
+            }
+            .or_else(|| LATIN1.iter().position(|&l| l == n).map(|i| 0xA0 + i as u32))
+            .and_then(char::from_u32),
+        });
+        match (ch, end) {
+            (Some(c), Some(e)) => {
+                out.push(c);
+                rest = &rest[e + 1..];
+            }
+            _ => {
+                out.push('&');
+                rest = &rest[1..];
+            }
+        }
+    }
+    out + rest
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -262,5 +321,7 @@ mod tests {
         assert_eq!(parse_euros("n/a"), None);
         assert_eq!(str_of(&json!(53701)), Some("53701".into()));
         assert_eq!(str_of(&json!("053701")), Some("053701".into()));
+        assert_eq!(decode_html("a &amp; b &#x41; &bogus c &"), "a & b A &bogus c &");
+        assert_eq!(decode_html("&Eacute;cr&eacute;m&eacute; &#8364; &yuml;&nbsp;"), "Écrémé € ÿ ");
     }
 }
