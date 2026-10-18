@@ -12,8 +12,8 @@
 //!   next 18 products in its `.infinite-scroll-placeholder`'s
 //!   `data-grid-url` (`&start=18&sz=18&format=page-element`), which the
 //!   site's infinite scroll (`categorypage.js`) GETs as an XHR.
-//! - A tile without the add-to-cart button (`data-bag`) is out of stock: the
-//!   site's own script sorts those last.
+//! - An out-of-stock tile (class `product-unavailable`) has no add-to-cart
+//!   button (`data-bag`) and the price "unknown"; results list them last.
 //! - `StoreLocator-Autocomplete?query=`: places (postal code, town,
 //!   coordinates); `StoreLocator-GeolocateByCPandCity`: the stores near one.
 
@@ -212,7 +212,14 @@ mod tests {
 <div data-global-login-cta="productAddition" data-slot-tc data-bag class="product-button__bag icon-bag" data-pid="7634896">
 <input type="number" name="Quantity" data-attr-quantity='1' data-max-quantity="6.0" value="2" inputmode="numeric" min="1" max="9999" autocomplete="off"/>
 </div></li>
-<li data-tile="0" data-page-number="0.0" data-tc-product-tile="{&quot;id&quot;:&quot;222&quot;,&quot;name&quot;:&quot;Lait&quot;,&quot;price&quot;:&quot;1.20&quot;}"></li></ul>
+<li data-tile="25" data-page-number="25.0" class='grid-tile small-6 medium-6 17' data-product-id="5870443" data-comment-wrapper data-tc-product-tile="{&quot;id&quot;:&quot;5870443&quot;,&quot;name&quot;:&quot;Lait UHT biologique entier Bouteille 6x1L&quot;,&quot;EAN&quot;:&quot;3256222242651&quot;,&quot;brand&quot;:&quot;U BIO&quot;,&quot;price&quot;:&quot;unknown&quot;,&quot;quantity&quot;:1}">
+<div class="product-tile product-unavailable product-tile-advantage-false master-product-false" data-itemid="5870443" data-product-tile data-product-order-unavailable="5870443">
+<div class="product-unavailable-overlay">
+<p class="product-unavailable-message su-font-open">Produit bient&ocirc;t disponible</p>
+</div>
+<div class="product-pricing  product-not-available " data-product-pricing>
+<span class="su-btn su-btn-medium su-btn-primary-default similar-products-show-button" data-similar-products-show-button tabindex="0" role="button" data-relevant-sticky>
+</span></div></div></li></ul>
 <div class="infinite-scroll-placeholder"
 data-loading-state="unloaded"
 data-grid-url="/recherche?q=lait&amp;start=18&amp;sz=18&amp;format=page-element"
@@ -225,11 +232,12 @@ data-grid-url-prev="/recherche?q=lait">
         assert_eq!((p[0].id.as_str(), p[0].name.as_str()), ("7634896", "Lait UHT demi-écrémé - 6 bouteilles de 1L"));
         assert_eq!((p[0].brand.as_deref(), p[0].ean.as_deref()), (Some("PRODUIT U"), Some("3256225425617")));
         assert_eq!((p[0].price, p[0].unit_price.as_deref(), p[0].nutriscore.as_deref()), (Some(6.96), Some("1,16 €/l"), Some("B")));
-        // The second tile has a price but no add-to-cart button.
+        // The second tile is out of stock: no add-to-cart button.
         assert!(p[0].available && !p[1].available);
         assert_eq!((p[0].in_cart, p[1].in_cart), (2, 0));
         assert_eq!(next_page(search).as_deref(), Some("/recherche?q=lait&start=18&sz=18&format=page-element"));
-        assert_eq!(next_page(&search.replace("\"unloaded\"", "\"loaded\"")), None);
+        let last = r#"<div class="infinite-scroll-placeholder" data-loading-state="loaded" data-grid-url="" data-loading-state-prev="" data-grid-url-prev="/recherche?q=lait&amp;start=432&amp;sz=18&amp;format=page-element" >"#;
+        assert_eq!(next_page(last), None);
 
         let place = r#"<li id="350000" data-autocomplete-trust="true" tabindex="0" role="option" data-prehome-city-suggestion class="ab-prehome-search-suggestion su-font-open" data-link-index="0" data-city-zipcode="35000" data-city-name="Rennes" data-lat-input="48.111339" data-long-input="-1.68002" data-cs-mask>"#;
         assert_eq!((attr(place, "data-city-zipcode"), attr(place, "data-lat-input")), (Some("35000"), Some("48.111339")));
