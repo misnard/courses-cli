@@ -223,10 +223,6 @@ impl Web {
     pub fn login(&mut self, url: &str) -> Result<()> {
         self.show(url, "Sign in (and solve any captcha)")
     }
-
-    pub fn checkout(&mut self, url: &str) -> Result<()> {
-        self.show(url, "Book a slot and pay")
-    }
 }
 
 impl Drop for Web {
