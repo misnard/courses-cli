@@ -77,6 +77,8 @@ enum Commands {
         #[arg(long)]
         yes: bool,
     },
+    /// Open the cart on the site, in a window, to book a slot and pay
+    Checkout,
     /// Find a drive near a postal code or city and pick it
     Store {
         /// Postal code or city (none: show the picked store)
@@ -224,6 +226,7 @@ fn main() -> Result<()> {
             SlotsCommands::Select { slot_ref } => slots::select_slot(&slot_ref)?,
         },
         Commands::Store { query, pick } => shop::store(p, query.as_deref(), pick.as_deref())?,
+        Commands::Checkout => shop::checkout(p)?,
         Commands::Api { name, params, describe, yes } => match name {
             None => api::list(),
             Some(name) if describe => api::describe(&name)?,

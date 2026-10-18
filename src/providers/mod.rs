@@ -136,6 +136,12 @@ pub trait Shop {
     fn login(&mut self) -> Result<()> {
         unsupported("Signing in")
     }
+    /// Show the site's cart in the window the shop was opened with, where the
+    /// user books a slot and pays: an anonymous cart only exists in the CLI's
+    /// own Chrome profile.
+    fn checkout(&mut self) -> Result<()> {
+        unsupported("Checking out")
+    }
     fn signed_in(&mut self) -> Result<bool> {
         unsupported("Checking the session")
     }
@@ -205,12 +211,21 @@ impl Web {
         serde_json::from_str(text).with_context(|| format!("Unexpected answer from {url}"))
     }
 
-    /// Show `url` in the window (opened with headless: false) until the user is done.
-    pub fn login(&mut self, url: &str) -> Result<()> {
+    /// Show `url` in the window (opened with headless: false) until the user
+    /// presses Enter; `what` tells them what to do there.
+    pub fn show(&mut self, url: &str, what: &str) -> Result<()> {
         self.browser.open(url)?;
-        println!("Sign in in the Chrome window (and solve any captcha), then press Enter here.");
+        println!("{what} in the Chrome window, then press Enter here.");
         std::io::stdin().read_line(&mut String::new())?;
         Ok(())
+    }
+
+    pub fn login(&mut self, url: &str) -> Result<()> {
+        self.show(url, "Sign in (and solve any captcha)")
+    }
+
+    pub fn checkout(&mut self, url: &str) -> Result<()> {
+        self.show(url, "Book a slot and pay")
     }
 }
 

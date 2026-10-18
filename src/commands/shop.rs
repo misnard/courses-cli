@@ -170,6 +170,10 @@ pub fn login(p: Provider) -> Result<()> {
     Ok(())
 }
 
+pub fn checkout(p: Provider) -> Result<()> {
+    providers::open(p, false)?.checkout()
+}
+
 pub fn status(p: Provider) -> Result<()> {
     if let Ok(s) = providers::store(p) {
         println!("Store: {} ({})", s.name, s.id);
