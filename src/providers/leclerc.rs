@@ -5,7 +5,8 @@
 //! `browser.rs` gets through it as it does Cloudflare, as long as requests
 //! leave from a real HTML page (`Web::send`'s `page`). Store pages are ASP.NET
 //! HTML with the product records and the cart embedded as JSON objects; every
-//! cart write is one form POST to `panier.aspx?op=1`.
+//! cart write is one form POST to `panier.aspx?op=1`. The cart's own page,
+//! for checkout, is `detail-panier.aspx` (`panier.aspx` alone answers 404).
 
 use super::{decode_html, parse_euros, store, str_of, Cart, CartLine, Product, Provider, Shop, Store, Web};
 use anyhow::{bail, Context, Result};
@@ -131,6 +132,13 @@ impl Shop for Leclerc {
     fn login(&mut self) -> Result<()> {
         let url = format!("{}/", base(&store(Provider::Leclerc)?));
         self.web.login(&url)
+    }
+
+    /// The page the cart panel's "voir le panier" link opens (`sUrlDetailPanier`);
+    /// its "valider" button goes on to the slot and payment steps.
+    fn checkout(&mut self) -> Result<()> {
+        let url = format!("{}/detail-panier.aspx", base(&store(Provider::Leclerc)?));
+        self.web.show(&url, "Book a slot and pay")
     }
 
     fn signed_in(&mut self) -> Result<bool> {
